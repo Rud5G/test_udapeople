@@ -27,6 +27,9 @@ jobs:
   build-backend:
     docker:
       - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     steps:
       - checkout
       - run:
@@ -42,6 +45,29 @@ jobs:
           name: Run backend build
           command: |
             cd ~/project/backend && npm run build
+
+  build-frontend:
+    docker:
+      - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - run:
+          name: Check node version
+          command: |
+            node --version
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/frontend
+          cache-path: ~/project/frontend/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run frontend build
+          command: |
+            cd ~/project/frontend && npm run build
+
 
 #  build-backendx:
 #    docker:
@@ -112,5 +138,7 @@ workflows:
   default:
     jobs:
       - build-backend
-#      - build-frontend
-
+      - build-frontend
+#      - build-frontend:
+#          requires:
+#            - build-backend
