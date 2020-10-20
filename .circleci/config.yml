@@ -87,9 +87,10 @@ jobs:
             cd ~/project/frontend && npm run test
       - store_test_results:
           path: ~/project/frontend/coverage
-      #  - store_artifacts:
-      #      path: ./project/backend/coverage
-
+      - store_test_results:
+          path: frontend/coverage
+      - store_artifacts:
+          path: frontend/coverage
 
   test-backend:
     docker:
@@ -109,9 +110,11 @@ jobs:
           command: |
             cd ~/project/backend && npm run test
       - store_test_results:
-          path: ~/project/backend/coverage
-      #  - store_artifacts:
-      #      path: ./project/backend/coverage
+          path: backend/coverage
+      - store_artifacts:
+          path: backend/coverage
+
+
 
 #  build-backend:
 
