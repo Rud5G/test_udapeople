@@ -85,10 +85,17 @@ jobs:
           name: Run frontend build
           command: |
             cd ~/project/frontend && npm run test
+      - run:
+          name: Run frontend build
+          command: |
+            cd ~/project/frontend && npm run test:cov
       - store_test_results:
           path: frontend/coverage
+      - store_test_results:
+          path: frontend/coverage/lcov-report
       - store_artifacts:
           path: frontend/coverage
+
 
   test-backend:
     docker:
