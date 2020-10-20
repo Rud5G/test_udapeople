@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@3.0.0
+  node: circleci/node@4.1.0
 
 ### It's a good practice to keep your commands at the top of the config file. In this project, you'll need at least 2 commands:
 commands:
@@ -27,22 +27,18 @@ jobs:
   build-backend:
     docker:
       - image: amazon/aws-cli
-    working_directory: ~/test_udapeople
+    # working_directory: ~/test_udapeople
     # Reuse Docker container specification given by the node Orb
     executor: node/default
     steps:
       - checkout
-      - node/install-npm
-      # Install dependencies - the node Orb take care of installation and dependency caching
+      - node/install
+      - run: node --version
       - node/install-packages:
-          app-dir: ~/test_udapeople/backend
-          cache-path: node_modules
-          override-ci-command: npm i
-      # Save workspace for subsequent jobs (i.e. test)
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
+          app-dir: ~/project/backend
+          cache-path: ~/project/backend/node_modules
+          override-ci-command: npm install
+      - run: npm run build
 
 #  build-backendx:
 #    docker:
