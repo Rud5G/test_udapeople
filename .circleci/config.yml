@@ -86,7 +86,7 @@ jobs:
           command: |
             cd ~/project/frontend && npm run test
       - run:
-          name: Run frontend build
+          name: Run frontend test
           command: |
             cd ~/project/frontend && npm run test:cov
       - store_test_results:
@@ -95,7 +95,6 @@ jobs:
           path: frontend/coverage/lcov-report
       - store_artifacts:
           path: frontend/coverage
-
 
   test-backend:
     docker:
@@ -111,7 +110,7 @@ jobs:
           cache-path: ~/project/backend/node_modules
           override-ci-command: npm install
       - run:
-          name: Run backend build
+          name: Run backend test
           command: |
             cd ~/project/backend && npm run test
       - store_test_results:
@@ -119,6 +118,49 @@ jobs:
       - store_artifacts:
           path: backend/coverage
 
+  scan-frontend:
+    docker:
+      - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/frontend
+          cache-path: ~/project/frontend/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run frontend scan
+          command: |
+            cd ~/project/frontend && npm audit --audit-level=critical
+      - store_test_results:
+          path: frontend/coverage
+      - store_artifacts:
+          path: frontend/coverage
+
+  scan-backend:
+    docker:
+      - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/backend
+          cache-path: ~/project/backend/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run backend scan
+          command: |
+            cd ~/project/backend && npm audit --audit-level=critical
+      - store_test_results:
+          path: backend/coverage
+      - store_artifacts:
+          path: backend/coverage
 
 
 #  build-backend:
