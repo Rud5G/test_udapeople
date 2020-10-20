@@ -1,11 +1,20 @@
 version: 2.1
 
 ### It's a good practice to keep your commands at the top of the config file. In this project, you'll need at least 2 commands:
+commands:
+  sayhello:
+    description: "A very simple command for demonstration purposes"
+    parameters:
+      to:
+        type: string
+        default: "Hello World"
+    steps:
+      - run: echo << parameters.to >>
 
-# commands:
-#   destroy-environment:
-#     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
-#     ...
+  destroy-environment:
+    description: Destroy backend and frontend cloudformation stacks given a workflow ID.
+    steps:
+      - run: aws cloudformation delete-stack --stack-name "prod-${CIRCLE_WORKFLOW_ID}"
 
 #   revert-migration:
 #     description: Revert the last migration if successfully run in the current workflow.
