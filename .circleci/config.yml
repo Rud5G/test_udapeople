@@ -32,8 +32,12 @@ jobs:
     executor: node/default
     steps:
       - checkout
-      - node/install
-      - run: node --version
+      # - node/install
+      - run:
+          name: Check node version
+          command: |
+            node --version
+      - node/install-npm
       - node/install-packages:
           app-dir: ~/project/backend
           cache-path: ~/project/backend/node_modules
