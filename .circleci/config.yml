@@ -68,45 +68,42 @@ jobs:
           command: |
             cd ~/project/frontend && npm run build
 
+  test-frontend:
+    docker:
+      - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/frontend
+          cache-path: ~/project/frontend/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run frontend build
+          command: |
+            cd ~/project/frontend && npm run test
 
-#  build-backendx:
-#    docker:
-#      - image: amazon/aws-cli
-#    steps:
-#      - checkout
-#      - restore_cache:
-#          keys:
-#          - deps-{{ checksum "requirements.txt" }}
-#      - run: mkdir -p ~/.cache/pip
-#      - run: sudo pip install --cache-dir ~/.cache/pip -q -r requirements.txt
-#      - save_cache:
-#          key: deps-{{ checksum "requirements.txt" }}
-#          paths:
-#          - ~/.cache/pip
-#
-#      - node/install-npm
-#      - run:
-#          name: Backend build
-#          command: |
-#            cd backend && npm i && npm run build
+  test-backend:
+    docker:
+      - image: cimg/node:lts
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/backend
+          cache-path: ~/project/backend/node_modules
+          override-ci-command: npm install
+      - run:
+          name: Run backend build
+          command: |
+            cd ~/project/backend && npm run test
 
-
-#docker:
-#  - image: amazon/aws-cli
-# working_directory: ~/test_udapeople
-# Reuse Docker container specification given by the node Orb
-# - node/install
-
-#  build-frontend:
-#    docker:
-#      - image: amazon/aws-cli
-#    steps:
-#      - checkout
-#      - node/install-npm
-#      - run:
-#          name: Frontend build
-#          command: |
-#            cd frontend && npm i && npm run build
 
 #  build-backend:
 
@@ -114,9 +111,9 @@ jobs:
 
 #  test-frontend:
 
-#  est-backend:
+#  test-backend:
 
-#  can-frontend:
+#  scan-frontend:
 
 #  scan-backend:
 
