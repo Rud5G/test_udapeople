@@ -25,14 +25,9 @@ commands:
 
 jobs:
   build-backend:
-    #docker:
-    #  - image: amazon/aws-cli
-    # working_directory: ~/test_udapeople
-    # Reuse Docker container specification given by the node Orb
     executor: node/default
     steps:
       - checkout
-      # - node/install
       - run:
           name: Check node version
           command: |
@@ -42,7 +37,10 @@ jobs:
           app-dir: ~/project/backend
           cache-path: ~/project/backend/node_modules
           override-ci-command: npm install
-      - run: npm run build
+      - run:
+          name: Run backend build
+          command: |
+            cd ~/project/backend && npm run build
 
 #  build-backendx:
 #    docker:
@@ -65,6 +63,12 @@ jobs:
 #          command: |
 #            cd backend && npm i && npm run build
 
+
+#docker:
+#  - image: amazon/aws-cli
+# working_directory: ~/test_udapeople
+# Reuse Docker container specification given by the node Orb
+# - node/install
 
 #  build-frontend:
 #    docker:
