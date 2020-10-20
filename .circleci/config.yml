@@ -86,7 +86,7 @@ jobs:
           command: |
             cd ~/project/frontend && npm run test
       - store_test_results:
-          path: ./project/frontend/coverage
+          path: ~/project/frontend/coverage
       #  - store_artifacts:
       #      path: ./project/backend/coverage
 
@@ -109,7 +109,7 @@ jobs:
           command: |
             cd ~/project/backend && npm run test
       - store_test_results:
-          path: ./project/backend/coverage
+          path: ~/project/backend/coverage
       #  - store_artifacts:
       #      path: ./project/backend/coverage
 
