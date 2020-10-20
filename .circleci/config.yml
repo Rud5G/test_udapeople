@@ -25,7 +25,8 @@ commands:
 
 jobs:
   build-backend:
-    executor: node/default
+    docker:
+      - image: cimg/node:lts
     steps:
       - checkout
       - run:
