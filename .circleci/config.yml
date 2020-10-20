@@ -12,7 +12,7 @@ commands:
       - run: echo << parameters.to >>
 
   destroy-environment:
-    description: Destroy backend and frontend cloudformation stacks given a workflow ID.
+    description: Destroy cloudformation stacks given a workflow ID.
     steps:
       - run: aws cloudformation delete-stack --stack-name "prod-${CIRCLE_WORKFLOW_ID}"
 
@@ -21,17 +21,27 @@ commands:
 #     ...
 
 jobs:
-  hello-world: # Delete this job when you get started
+  build-backend:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
       - run:
-          name: Say Hello
+          name: Backend build
           command: |
-            echo "Hello World"
+            cd backend && npm i && npm run build
 
-#  build-frontend:
+  build-frontend:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Frontend build
+          command: |
+            cd frontend && npm i && npm run build
+
+#  build-backend:
 
 #  build-frontend:
 
@@ -60,4 +70,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - hello-world
+      - build-backend
+      - build-frontend
+
