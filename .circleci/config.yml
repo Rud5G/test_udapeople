@@ -25,8 +25,8 @@ commands:
 
 jobs:
   build-backend:
-    docker:
-      - image: amazon/aws-cli
+    #docker:
+    #  - image: amazon/aws-cli
     # working_directory: ~/test_udapeople
     # Reuse Docker container specification given by the node Orb
     executor: node/default
