@@ -85,6 +85,11 @@ jobs:
           name: Run frontend build
           command: |
             cd ~/project/frontend && npm run test
+      - store_test_results:
+          path: ./project/frontend/coverage
+      #  - store_artifacts:
+      #      path: ./project/backend/coverage
+
 
   test-backend:
     docker:
@@ -103,7 +108,10 @@ jobs:
           name: Run backend build
           command: |
             cd ~/project/backend && npm run test
-
+      - store_test_results:
+          path: ./project/backend/coverage
+      #  - store_artifacts:
+      #      path: ./project/backend/coverage
 
 #  build-backend:
 
