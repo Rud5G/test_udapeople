@@ -88,11 +88,13 @@ jobs:
       - run:
           name: Run frontend test
           command: |
+            cd ~/project/frontend && npm run test
+      - run:
+          name: Run frontend test
+          command: |
             cd ~/project/frontend && npm run test:cov
       - store_test_results:
           path: frontend/coverage
-      - store_test_results:
-          path: frontend/coverage/lcov-report
       - store_artifacts:
           path: frontend/coverage
 
@@ -110,13 +112,21 @@ jobs:
           cache-path: ~/project/backend/node_modules
           override-ci-command: npm install
       - run:
-          name: Run backend test
+          name: Run backend unit tests
           command: |
             cd ~/project/backend && npm run test
+      - run:
+          name: Run backend e2e tests
+          command: |
+            cd ~/project/backend && npm run test:e2e
+      - run:
+          name: Run backend test coverage
+          command: |
+            cd ~/project/backend && npm run test:cov
       - store_test_results:
-          path: backend/coverage
+          path: ~/project/backend/coverage
       - store_artifacts:
-          path: backend/coverage
+          path: ~/project/backend/coverage
 
   scan-frontend:
     docker:
@@ -163,40 +173,29 @@ jobs:
           path: backend/coverage
 
 
-#  build-backend:
-
-#  build-frontend:
-
-#  test-frontend:
-
-#  test-backend:
-
-#  scan-frontend:
-
-#  scan-backend:
-
-#  deploy-infrastructure:
-
-#  configure-infrastructure:
-
-#  run-migrations:
-
-#  deploy-frontend:
-
-#  deploy-backend:  
-
-#  smoke-test:
-
-#  cloudfront-update:
-
 workflows:
   default:
     jobs:
       - build-backend
       - build-frontend
-      - test-frontend:
-          requires:
-            - build-frontend
       - test-backend:
           requires:
             - build-backend
+      - test-frontend:
+          requires:
+            - build-frontend
+
+
+#  build-backend:
+#  build-frontend:
+#  test-frontend:
+#  test-backend:
+#  scan-frontend:
+#  scan-backend:
+#  deploy-infrastructure:
+#  configure-infrastructure:
+#  run-migrations:
+#  deploy-frontend:
+#  deploy-backend:
+#  smoke-test:
+#  cloudfront-update:
