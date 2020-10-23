@@ -115,14 +115,14 @@ jobs:
           name: Run backend unit tests
           command: |
             cd ~/project/backend && npm run test
-      - run:
-          name: Run backend e2e tests
-          command: |
-            cd ~/project/backend && npm run test:e2e
-      - run:
-          name: Run backend test coverage
-          command: |
-            cd ~/project/backend && npm run test:cov
+          #- run:
+          #    name: Run backend e2e tests
+          #    command: |
+          #      cd ~/project/backend && npm run test:e2e
+          #- run:
+          #    name: Run backend test coverage
+          #    command: |
+          #      cd ~/project/backend && npm run test:cov
       - store_test_results:
           path: ~/project/backend/coverage
       - store_artifacts:
