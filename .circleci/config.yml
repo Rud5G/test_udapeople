@@ -127,15 +127,11 @@ jobs:
       - run:
           name: Run frontend build
           command: |
-            cd ~/project/frontend && npm run test
+            cd ~/project/frontend && npm run build
       - run:
           name: Run frontend test
           command: |
             cd ~/project/frontend && npm run test
-      - run:
-          name: Run frontend test
-          command: |
-            cd ~/project/frontend && npm run test:cov
       - store_test_results:
           path: frontend/coverage
       - store_artifacts:
