@@ -76,23 +76,23 @@ jobs:
           name: Run frontend build
           command: |
             cd ~/project/frontend && npm run build
-      - slack/notify:
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "plain_text",
-                      "text": "*This is a text notification*",
-                      "emoji": true
-                    }
-                  ]
-                }
-              ]
-            }
-          event: always
+  #      - slack/notify:
+  #          custom: |
+  #            {
+  #              "blocks": [
+  #                {
+  #                  "type": "section",
+  #                  "fields": [
+  #                    {
+  #                      "type": "plain_text",
+  #                      "text": "*This is a text notification*",
+  #                      "emoji": true
+  #                    }
+  #                  ]
+  #                }
+  #              ]
+  #            }
+  #          event: always
 
   #      - restore_cache:
   #          keys: [frontend-build]
@@ -154,6 +154,14 @@ jobs:
           path: frontend/coverage
       - store_artifacts:
           path: frontend/coverage
+      - slack/notify:
+          event: fail
+          mentions: '@Rudger'
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          mentions: '@Rudger'
+          template: success_tagged_deploy_1
 
   test-backend:
     <<: *defaults
