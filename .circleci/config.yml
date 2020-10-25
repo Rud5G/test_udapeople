@@ -23,6 +23,7 @@ dockeraws: &dockeraws
 
 orbs:
   node: circleci/node@4.1.0
+  slack: circleci/slack@4.0.2
 
 commands:
   destroy-environment:
@@ -75,6 +76,23 @@ jobs:
           name: Run frontend build
           command: |
             cd ~/project/frontend && npm run build
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "*This is a text notification*",
+                      "emoji": true
+                    }
+                  ]
+                }
+              ]
+            }
+          event: always
 
   #      - restore_cache:
   #          keys: [frontend-build]
