@@ -246,8 +246,7 @@ jobs:
     steps:
       - checkout
       - run: Install dependencies
-        command: |
-          set -ex; apt-get update && apt-get install -y --no-install-recommends jq tar gzip
+        command: set -ex; apt-get update && apt-get install -y --no-install-recommends jq tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
