@@ -36,8 +36,11 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name "<<parameters.workflowid>>""
+            aws cloudformation delete-stack --stack-name "<<parameters.workflowid>>"
             exit 0
+
+    #  aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflowid>>"
+    #  aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflowid>>"
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -249,6 +252,7 @@ jobs:
           name: Install dependencies
           command: |
             set -ex
+            yum update -y
             yum install jq -y
             yum install tar -y
             yum install gzip -y
@@ -261,6 +265,8 @@ jobs:
               --tags project=Udapeople \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -269,6 +275,8 @@ jobs:
               --tags project=Udapeople \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -281,12 +289,13 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure
+
 
   configure-infrastructure:
     <<: *dockeransible
     steps:
-      # Checkout code from git
+      - checkout
+      -
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
@@ -299,7 +308,8 @@ jobs:
           command: |
             # Your code here
             exit 1
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment:
+          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
   run-migrations:
     <<: *defaults
