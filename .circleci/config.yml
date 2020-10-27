@@ -249,8 +249,9 @@ jobs:
           name: Install dependencies
           command: |
             set -ex
-            apt-get update
-            apt-get install -y --no-install-recommends jq tar gzip
+            yum install jq -y
+            yum install tar -y
+            yum install gzip -y
       - run:
           name: Ensure back-end infrastructure exists
           command: |
