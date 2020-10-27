@@ -245,8 +245,12 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: Install dependencies
-        command: set -ex; apt-get update && apt-get install -y --no-install-recommends jq tar gzip
+      - run:
+          name: Install dependencies
+          command: |
+            set -ex
+            apt-get update
+            apt-get install -y --no-install-recommends jq tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
