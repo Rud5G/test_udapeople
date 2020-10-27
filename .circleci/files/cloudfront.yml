@@ -6,15 +6,12 @@ Parameters:
     Description: Unique identifier.
     Type: String
 
-
 Resources:
-  
   CloudFrontOriginAccessIdentity:
     Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: Origin Access Identity for Serverless Static Website
-
   WebpageCDN:
     Type: AWS::CloudFront::Distribution
     Properties:

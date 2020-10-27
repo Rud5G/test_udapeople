@@ -58,3 +58,7 @@ Before you submit your project, please check your work against the project rubri
 
 [License](LICENSE.md)
 
+### Amazon AMI
+
+    $ aws ec2 describe-images --filters 'Name=name,Values=*ubuntu-*-18.04-*' 'Name=state,Values=available' --query 'reverse(sort_by(Images, &CreationDate))[:1].ImageId' --output text
+
