@@ -257,8 +257,6 @@ jobs:
               --tags project=Udapeople \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-      - destroy-environment:
-          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -267,21 +265,33 @@ jobs:
               --tags project=Udapeople \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-      - destroy-environment:
-          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            echo "[all]" > ./inventory.txt
-            aws ec2 describe-instances \
+            set -ex
+            echo "[web]" > .circleci/ansible/inventory.txt
+            export BACKEND_IP_ADDRESS="$(aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:Project,Values=udapeople" \
-                --output text >> ./inventory.txt
+                --filters "Name=tag:project,Values=Udapeople" \
+                --output text)"
+            echo "$BACKEND_IP_ADDRESS" >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+            echo "export BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
+            curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+            - .circleci/ansible/inventory.txt
 
+      - run:
+          name: Add backend-url to memory
+          command: |
+            curl -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request GET https://api.memstash.io/values/backend-url
+      - destroy-environment:
+          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
   configure-infrastructure:
     <<: *dockeransible
@@ -290,19 +300,29 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["c7:b4:21:1b:58:bd:90:3c:c3:6c:16:17:42:02:6a:08:33:89:af:83"]
       - attach_workspace:
-          at: ~/
+          at: /tmp/workspace
       - run:
           name: Install dependencies
           command: |
-            # Your code here
-            exit 1
+            whoami
+            sudo apt update
+            sudo apt install -y ca-certificates software-properties-common
+            sudo pip3 install ansible
+            sudo pip3 install awscliv2
       - run:
           name: Configure server
           command: |
-            # Your code here
+            set -ex
+            printenv
+            export
+            ls -ahls /tmp/workspace
+            ansible-playbook .circleci/ansible/configure-server.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt
+            EXIT_CODE=$?
             exit 1
       - destroy-environment:
           workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
 
   run-migrations:
     <<: *defaults
@@ -344,8 +364,10 @@ jobs:
     <<: *dockeransible
     steps:
       - checkout
-      # Add ssh keys with fingerprint
-      # attach workspace
+      - add_ssh_keys:
+          fingerprints: ["c7:b4:21:1b:58:bd:90:3c:c3:6c:16:17:42:02:6a:08:33:89:af:83"]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -430,8 +452,8 @@ workflows:
           filters:
             branches:
               only: [test-feature-branch]
-#      - configure-infrastructure:
-#          requires: [deploy-infrastructure]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
 #      - run-migrations:
 #          requires: [configure-infrastructure]
 #      - deploy-frontend:
