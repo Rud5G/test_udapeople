@@ -15,7 +15,7 @@
         TYPEORM_HOST: "{{ ansible_env.TYPEORM_HOST }}"
         TYPEORM_PORT: "{{ ansible_env.TYPEORM_PORT }}"
         TYPEORM_USERNAME: "${TYPEORM_USERNAME}"
-        TYPEORM_PASSWORD: {{ ansible_facts['TYPEORM_PASSWORD'] }}
+        TYPEORM_PASSWORD: "{{ ansible_facts['TYPEORM_PASSWORD'] }}"
         TYPEORM_DATABASE: "{{ ansible_env.TYPEORM_DATABASE }}"
 
   pre_tasks:
