@@ -276,7 +276,6 @@ jobs:
                 --output text | tail -1)"
             echo "$BACKEND_IP_ADDRESS" >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
-            ssh-keyscan -H $BACKEND_IP_ADDRESS >> ~/.ssh/known_hosts
             echo "export BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
             curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
       - persist_to_workspace:
@@ -284,7 +283,6 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
             - .circleci/ansible/inventory.txt
-            - .ssh/known_hosts
       - run:
           name: Add backend-url to memory
           command: |
@@ -314,6 +312,7 @@ jobs:
           name: Configure server
           command: |
             set -ex
+            mkdir -m 0700 -p ~/.ssh
             for ipaddress in $(grep -v '\[' inventory.txt); do echo "$ipaddress" ; ssh-keyscan -H $ipaddress >> ~/.ssh/known_hosts ; done
             ansible-playbook .circleci/ansible/configure-server.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt
             EXIT_CODE=$?
