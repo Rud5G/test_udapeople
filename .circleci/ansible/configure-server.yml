@@ -29,4 +29,7 @@
 
   roles:
     - configure-server
-      environment: "{{ envvars }}"
+
+  environment:
+    - "{{ envvars }}"
+
