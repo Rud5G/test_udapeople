@@ -159,9 +159,9 @@ jobs:
           event: fail
           mentions: '@Rudger'
           template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: success_tagged_deploy_1
+  #      - slack/notify:
+  #          event: pass
+  #          template: success_tagged_deploy_1
 
   test-backend:
     <<: *defaults
@@ -193,9 +193,9 @@ jobs:
           event: fail
           mentions: '@Rudger'
           template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: success_tagged_deploy_1
+  #      - slack/notify:
+  #          event: pass
+  #          template: success_tagged_deploy_1
 
   scan-frontend:
     <<: *defaults
@@ -273,9 +273,10 @@ jobs:
             export BACKEND_IP_ADDRESS="$(aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --filters "Name=tag:project,Values=Udapeople" \
-                --output text)"
+                --output text | tail -1)"
             echo "$BACKEND_IP_ADDRESS" >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
+            ssh-keyscan -H $BACKEND_IP_ADDRESS >> ~/.ssh/known_hosts
             echo "export BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
             curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
       - persist_to_workspace:
@@ -283,7 +284,7 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
             - .circleci/ansible/inventory.txt
-
+            - .ssh/known_hosts
       - run:
           name: Add backend-url to memory
           command: |
@@ -313,16 +314,18 @@ jobs:
           name: Configure server
           command: |
             set -ex
-            printenv
-            export
-            ls -ahls /tmp/workspace
+            for ipaddress in $(grep -v '\[' inventory.txt); do echo "$ipaddress" ; ssh-keyscan -H $ipaddress >> ~/.ssh/known_hosts ; done
             ansible-playbook .circleci/ansible/configure-server.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt
             EXIT_CODE=$?
-            exit 1
+            echo "$EXIT_CODE"
+            exit $EXIT_CODE
       - destroy-environment:
           workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment:
           workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+            #  printenv
+            #  export
+            #  ls -ahls /tmp/workspace
 
   run-migrations:
     <<: *defaults
