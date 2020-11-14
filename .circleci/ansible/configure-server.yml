@@ -12,11 +12,11 @@
         ENVIRONMENT: "production"
         TYPEORM_CONNECTION: "postgres"
         TYPEORM_ENTITIES: "./src/modules/domain/**/*.entity.ts"
-        TYPEORM_HOST: "{{ TYPEORM_HOST }}"
-        TYPEORM_PORT: "{{ TYPEORM_PORT }}"
+        TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+        TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
         TYPEORM_USERNAME: "${TYPEORM_USERNAME}"
-        TYPEORM_PASSWORD: "{{ TYPEORM_PASSWORD }}"
-        TYPEORM_DATABASE: "{{ TYPEORM_DATABASE }}"
+        TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+        TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
 
   pre_tasks:
     - name: "wait 600 seconds for target connection to become reachable/usable."
