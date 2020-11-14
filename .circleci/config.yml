@@ -316,7 +316,7 @@ jobs:
             export INVENTORY_FILE=/tmp/workspace/project/.circleci/ansible/inventory.txt
             mkdir -m 0700 -p ~/.ssh
             for ipaddress in $(grep -v '\[' "$INVENTORY_FILE"); do echo "$ipaddress" ; ssh-keyscan -H $ipaddress >> ~/.ssh/known_hosts ; done
-            ansible-playbook .circleci/ansible/configure-server.yml -i "$INVENTORY_FILE"
+            ansible-playbook .circleci/ansible/configure-server.yml -i "$INVENTORY_FILE" --verbose
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
