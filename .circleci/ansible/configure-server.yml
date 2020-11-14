@@ -9,9 +9,9 @@
     - ansible_host_key_checking: false
     - ansible_stdout_callback: yaml
     - envvars:
-        ENVIRONMENT: production
-        TYPEORM_CONNECTION: postgres
-        TYPEORM_ENTITIES: ./src/modules/domain/**/*.entity.ts
+        ENVIRONMENT: "production"
+        TYPEORM_CONNECTION: "postgres"
+        TYPEORM_ENTITIES: "./src/modules/domain/**/*.entity.ts"
         TYPEORM_HOST: "{{ ansible_env.TYPEORM_HOST }}"
         TYPEORM_PORT: "{{ ansible_env.TYPEORM_PORT }}"
         TYPEORM_USERNAME: "${TYPEORM_USERNAME}"
@@ -29,5 +29,4 @@
 
   roles:
     - configure-server
-
-  environment: "{{ envvars }}"
+      environment: "{{ envvars }}"
