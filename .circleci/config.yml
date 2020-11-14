@@ -308,6 +308,7 @@ jobs:
             sudo apt install -y ca-certificates software-properties-common
             sudo pip3 install ansible
             sudo pip3 install awscliv2
+            sudo apt -y update && apt install -y python3
       - run:
           name: Configure server
           command: |
