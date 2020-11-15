@@ -1,6 +1,6 @@
 version: 2.1
 
-defaults: &defaults
+dockernodejs: &dockernodejs
   docker:
     - image: cimg/node:lts
       auth:
@@ -25,7 +25,36 @@ orbs:
   node: circleci/node@4.1.0
   slack: circleci/slack@4.0.2
 
+#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
+#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+
 commands:
+  sayhello:
+    description: "A very simple command for demonstration purposes"
+    parameters:
+      to:
+        type: string
+        default: "Hello World"
+    steps:
+      - run: echo << parameters.to >>
+
+  memstash-write:
+    description: Write data (key + value) to memstash.io.
+    parameters:
+      key:
+        type: string
+      value:
+        type: string
+      token:
+        type: env_var_name
+        default: MEMSTASH_TOKEN
+    steps:
+      - run:
+          name: Send data to memstash.io
+          command: |
+            curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>
+            exit 0
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -63,7 +92,7 @@ commands:
 
 jobs:
   build-frontend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       - checkout
       - run:
@@ -109,7 +138,7 @@ jobs:
   #          key: frontend-build
 
   build-backend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       - checkout
       - node/install-npm
@@ -134,7 +163,7 @@ jobs:
   #          key: backend-build
 
   test-frontend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       # Restore from cache
       - checkout
@@ -164,7 +193,7 @@ jobs:
   #          template: success_tagged_deploy_1
 
   test-backend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       # Restore from cache
       - checkout
@@ -198,7 +227,7 @@ jobs:
   #          template: success_tagged_deploy_1
 
   scan-frontend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       # Restore from cache
       - checkout
@@ -217,7 +246,7 @@ jobs:
           path: frontend/coverage
 
   scan-backend:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       # Restore from cache
       - checkout
@@ -326,20 +355,46 @@ jobs:
             #  ls -ahls /tmp/workspace
 
   run-migrations:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/backend
+          cache-path: ~/project/backend/node_modules
+          override-ci-command: npm install
       - run:
           name: Run migrations
           command: |
-            # Your code here
-            exit 1
+            set -ex
+            > envsubst < .circleci/tpl/env.template > ~/project/backend/.env
+            cat ~/project/backend/.env
+            cd ~/project/backend && npm run migrations >> /tmp/output-migrations.log
       - run:
-          name: Send migration results to memstash
+          name: Check for success
           command: |
-            # Your code here
-            exit 1
+            set -ex
+            grep -i "has been executed successfully" /tmp/output-migrations.log
+      - memstash-write:
+          key: "migration_${CIRCLE_WORKFLOW_ID}"
+          value: "success"
+      - run:
+          name: Show result when on failure
+          command: |
+            set -ex
+            echo "failure"
+            cat /tmp/output-migrations.log
+          when: on_fail
+      - run:
+          name: Show result on success
+          command: |
+            set -ex
+            echo "success"
+            cat /tmp/output-migrations.log
      # Here's where you will add some code to rollback on failure
+
+
+
 
   deploy-frontend:
     <<: *dockeraws
@@ -417,7 +472,7 @@ jobs:
       # Here's where you will add some code to rollback on failure
 
 cleanup:
-    <<: *defaults
+    <<: *dockernodejs
     steps:
       - checkout
       - run:
@@ -455,8 +510,8 @@ workflows:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-#      - run-migrations:
-#          requires: [configure-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
 #      - deploy-frontend:
 #          requires: [run-migrations]
 #      - deploy-backend:
