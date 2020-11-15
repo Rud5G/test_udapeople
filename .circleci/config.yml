@@ -364,6 +364,10 @@ jobs:
           cache-path: ~/project/backend/node_modules
           override-ci-command: npm install
       - run:
+          name: Run backend build
+          command: |
+            cd ~/project/backend && npm run build
+      - run:
           name: Run migrations
           command: |
             set -ex
