@@ -369,7 +369,7 @@ jobs:
             set -ex
             envsubst < ".circleci/tpl/env.template" | tee ~/project/backend/.env
             cd ~/project/backend && ls -als .
-            cat "~/project/backend/.env"
+            cd ~/project/backend && cat .env
             cd ~/project/backend && npm run migrations >> /tmp/output-migrations.log
       - run:
           name: Check for success
@@ -393,9 +393,6 @@ jobs:
             echo "success"
             cat /tmp/output-migrations.log
      # Here's where you will add some code to rollback on failure
-
-
-
 
   deploy-frontend:
     <<: *dockeraws
