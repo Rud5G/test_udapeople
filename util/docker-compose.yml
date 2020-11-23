@@ -8,4 +8,34 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=glee
     ports:
-      - "5532:5432"
+      - "5432"
+    volumes:
+      - pgdata-volume:/var/lib/postgresql/data
+    networks:
+      db_net:
+        ipv4_address: 172.71.0.7
+
+  pgadmin:
+    image: "dpage/pgadmin4:latest"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=r.gravestein@triple-networks.com
+      - PGADMIN_DEFAULT_PASSWORD=rootpass
+    ports:
+      - "80"
+      - "443"
+    volumes:
+    - ./pgadmin/servers.json:/pgadmin4/servers.json
+    networks:
+      db_net:
+        ipv4_address: 172.71.0.8
+
+networks:
+  db_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.71.0.8/24
+
+volumes:
+  pgdata-volume:
