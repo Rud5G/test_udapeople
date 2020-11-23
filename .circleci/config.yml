@@ -357,12 +357,15 @@ jobs:
           name: Run migrations
           command: |
             set -x
+            npm install -g ts-node
+            npm install -g typeorm
             cd ~/project/backend
+            typeorm version
             envsubst < ~/project/.circleci/tpl/env.template > .env
             npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
             grep 'executed\ successfully' /tmp/output-migrations.log
-          no_output_timeout: 15m
+          no_output_timeout: 30m
       - memstash-write:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
           value: "success"
@@ -485,28 +488,18 @@ workflows:
       - test-backend:
           requires: [build-backend]
       - scan-backend:
-          requires: [build-backend]
+          requires: [test-backend]
       - scan-frontend:
-          requires: [build-frontend]
+          requires: [test-frontend]
       - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          requires: [test-frontend, test-backend]
           filters:
             branches:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [run-migrations]
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+          requires: [deploy-infrastructure]
 
 #  default:
 #    jobs:
@@ -517,15 +510,26 @@ workflows:
 #      - test-backend:
 #          requires: [build-backend]
 #      - scan-backend:
-#          requires: [test-backend]
+#          requires: [build-backend]
 #      - scan-frontend:
-#          requires: [test-frontend]
+#          requires: [build-frontend]
 #      - deploy-infrastructure:
-#          requires: [test-frontend, test-backend]
+#          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
 #          filters:
 #            branches:
 #              only: [test-feature-branch]
 #      - configure-infrastructure:
 #          requires: [deploy-infrastructure]
 #      - run-migrations:
-#          requires: [deploy-infrastructure]
+#          requires: [configure-infrastructure]
+#      - deploy-frontend:
+#          requires: [run-migrations]
+#      - deploy-backend:
+#          requires: [run-migrations]
+#      - smoke-test:
+#          requires: [deploy-backend, deploy-frontend]
+#      - cloudfront-update:
+#          requires: [smoke-test]
+#      - cleanup:
+#          requires: [cloudfront-update]
+
