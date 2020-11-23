@@ -371,8 +371,10 @@ jobs:
           name: Run migrations
           command: |
             set -ex
-            envsubst < ".circleci/tpl/env.template" | tee ./backend/.env
-            cd ~/project/backend && npm run migrations >> /tmp/output-migrations.log 2>&1
+            cd ~/project/backend
+            envsubst < ~/project/.circleci/tpl/env.template > .env
+            cat .env
+            npm run migrations > /tmp/output-migrations.log 2>&1
       - run:
           name: Check for success
           command: |
