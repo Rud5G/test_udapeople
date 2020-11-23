@@ -353,12 +353,13 @@ jobs:
             cd ~/project/backend
             npm install
             npm run build
+            sudo npm install -g typescript
+            sudo npm install -g ts-node
+            sudo npm install -g typeorm
       - run:
           name: Run migrations
           command: |
             set -x
-            npm install -g ts-node
-            npm install -g typeorm
             cd ~/project/backend
             typeorm version
             envsubst < ~/project/.circleci/tpl/env.template > .env
