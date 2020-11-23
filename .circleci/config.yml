@@ -367,14 +367,11 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            set -ex
+            set -x
             cd ~/project/backend
             envsubst < ~/project/.circleci/tpl/env.template > .env
-            cat .env
-            npm run migrations
-            npm run migrations:revert
-            npm run migrations > /tmp/output-migrations.log 2>&1
-            grep "has been executed successfully" /tmp/output-migrations.log
+            npm run migrations > /tmp/output-migrations.log
+            grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 15m
       - memstash-write:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
@@ -385,14 +382,14 @@ jobs:
             set -ex
             echo "success"
             cat /tmp/output-migrations.log
-          #      - run:
-          #          name: Show result when on failure
-          #          command: |
-          #            set -ex
-          #            echo "failure"
-          #            cat /tmp/output-migrations.log
-          #            cd ~/project/backend && npm run migrations:revert
-          #          when: on_fail
+      - run:
+          name: Show result when on failure
+          command: |
+            set -x
+            echo "failure"
+            cat /tmp/output-migrations.log
+            cd ~/project/backend && npm run migrations:revert
+          when: on_fail
 
   deploy-frontend:
     <<: *dockeraws
