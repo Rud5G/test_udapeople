@@ -363,7 +363,7 @@ jobs:
       - run:
           name: Run backend build
           command: |
-            cd ~/project/backend && npm ci && npm run build
+            cd ~/project/backend && npm install && npm run build
       - run:
           name: Run migrations
           command: |
@@ -371,6 +371,7 @@ jobs:
             cd ~/project/backend
             envsubst < ~/project/.circleci/tpl/env.template > .env
             npm run migrations > /tmp/output-migrations.log
+            cat /tmp/output-migrations.log
             grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 15m
       - memstash-write:
@@ -429,28 +430,28 @@ jobs:
             # your code here
       # Here's where you will add some code to rollback on failure
 
-  #  smoke-test:
-  #    docker:
-  #      # Lightweight Docker image
-  #    steps:
-  #      - checkout
-  #      - run:
-  #          name: Install dependencies
-  #          command: |
-  #            # your code here
-  #      - run:
-  #          name: Get backend url
-  #          command: |
-  #            # your code here
-  #      - run:
-  #          name: Backend smoke test.
-  #          command: |
-  #            # your code here
-  #      - run:
-  #          name: Frontend smoke test.
-  #          command: |
-  #            # your code here
-  #      # Here's where you will add some code to rollback on failure
+  smoke-test:
+    docker:
+      # Lightweight Docker image
+    steps:
+      # Checkout code from git
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+      - run:
+          name: Backend smoke test.
+          command: |
+            # your code here
+      - run:
+          name: Frontend smoke test.
+          command: |
+            # your code here
+      # Here's where you will add some code to rollback on failure
 
   cloudfront-update:
     <<: *dockeraws
@@ -466,23 +467,23 @@ jobs:
             # your code here
       # Here's where you will add some code to rollback on failure
 
-cleanup:
-    <<: *dockernodejs
-    steps:
-      - checkout
-      - run:
-          name: Get old stack workflow id
-          command: |
-            # your code here
-            export OldWorkflowID="the id here"
-            export STACKS=[] #put the list of stacks here
-      - run:
-          name: Remove old stacks and files
-          command: |
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-            then
+  cleanup:
+      <<: *dockernodejs
+      steps:
+        - checkout
+        - run:
+            name: Get old stack workflow id
+            command: |
               # your code here
-            fi
+              export OldWorkflowID="the id here"
+              export STACKS=[] #put the list of stacks here
+        - run:
+            name: Remove old stacks and files
+            command: |
+              if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+              then
+                # your code here
+              fi
             
 
 workflows:
@@ -507,24 +508,6 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [deploy-infrastructure]
-
-#      - run-migrations:
-#          requires: [configure-infrastructure]
-#      - deploy-frontend:
-#          requires: [run-migrations]
-#      - deploy-backend:
-#          requires: [run-migrations]
-#      - smoke-test:
-#          requires: [deploy-backend, deploy-frontend]
-#      - cloudfront-update:
-#          requires: [smoke-test]
-#      - cleanup:
-#          requires: [cloudfront-update]
-#      - deploy-infrastructure:
-#          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-#          filters:
-#            branches:
-#              only: [test-feature-branch]
 
 #  default:
 #    jobs:
