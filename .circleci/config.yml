@@ -355,14 +355,14 @@ jobs:
             npm run build
             sudo npm install -g typescript
             sudo npm install -g ts-node
-            sudo npm install -g typeorm
       - run:
           name: Run migrations
           command: |
             set -x
             cd ~/project/backend
-            typeorm version
+            ts-node node_modules/typeorm/cli.js version
             envsubst < ~/project/.circleci/tpl/env.template > .env
+            ts-node node_modules/typeorm/cli.js migration:show
             npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
             grep 'executed\ successfully' /tmp/output-migrations.log
