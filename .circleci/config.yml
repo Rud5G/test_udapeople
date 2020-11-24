@@ -417,16 +417,19 @@ jobs:
           name: Install dependencies
           command: |
             sudo apt -y update
-            sudo apt install -y ca-certificates software-properties-common python3
+            sudo apt install -y ca-certificates software-properties-common python3 tree
             sudo pip3 install ansible
             sudo pip3 install awscliv2
       - run:
           name: Deploy backend
           command: |
             set -ex
-            ls -ahls ${CIRCLE_WORKING_DIRECTORY}
+            pwd
+            ls -ahls .
+            
             export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook ${CIRCLE_WORKING_DIRECTORY}/.circleci/ansible/deploy-backend.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
+            ansible-playbook .circleci/ansible/deploy-backend.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
+
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
