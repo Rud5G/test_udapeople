@@ -1,12 +1,21 @@
 ---
 # The variables file used by the playbooks in the web group.
 # These don't have to be explicitly imported by vars_files: they are autopopulated.
+##ENVIRONMENT: "production"
+#TYPEORM_USERNAME: "${TYPEORM_USERNAME}"
 
-ENVIRONMENT: "production"
+ENVIRONMENT: "local"
+
 TYPEORM_CONNECTION: "postgres"
+TYPEORM_MIGRATIONS_DIR: "./src/migrations"
 TYPEORM_ENTITIES: "./src/modules/domain/**/*.entity.ts"
+TYPEORM_MIGRATIONS: "./src/migrations/*.ts"
+
 TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
 TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
-TYPEORM_USERNAME: "${TYPEORM_USERNAME}"
+TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
 TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
 TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
+
+BACKEND_CODE: "./backend/dist"
+FRONTEND_CODE: "./frontend/dist"
