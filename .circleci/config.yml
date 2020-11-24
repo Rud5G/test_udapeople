@@ -482,7 +482,8 @@ jobs:
 workflows:
   default:
     jobs:
-      - run-migrations:
+      - run-migrations
+
 #      - build-frontend
 #      - build-backend
 #      - test-frontend:
