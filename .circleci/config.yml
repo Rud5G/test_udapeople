@@ -25,8 +25,8 @@ orbs:
   node: circleci/node@4.1.0
   slack: circleci/slack@4.0.2
 
-#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
-#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+  #              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
+  #              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
 
 commands:
   sayhello:
@@ -54,6 +54,7 @@ commands:
           command: |
             curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>
             exit 0
+
 
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -89,6 +90,7 @@ commands:
             #  Add revert code here. You can find this in the Getting Started section.
               exit 1
             fi
+
 
 jobs:
   build-frontend:
@@ -422,6 +424,7 @@ jobs:
           name: Deploy backend
           command: |
             set -ex
+            ls -ahls ${CIRCLE_WORKING_DIRECTORY}
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook ${CIRCLE_WORKING_DIRECTORY}/.circleci/ansible/deploy-backend.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
             EXIT_CODE=$?
@@ -483,6 +486,7 @@ jobs:
               then
                 # your code here
               fi
+
 
 
 workflows:
