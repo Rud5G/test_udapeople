@@ -404,10 +404,11 @@ jobs:
             yum install jq -y
             yum install tar -y
             yum install gzip -y
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-            . ~/.nvm/nvm.sh
-            nvm install node
-            node -e "console.log('Running Node.js ' + process.version)"
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/project/backend
+          cache-path: ~/project/backend/node_modules
+          override-ci-command: npm install
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -417,8 +418,6 @@ jobs:
             echo "export API_URL=\"http://${BACKEND_IP}:3030\"" >> $BASH_ENV
             source $BASH_ENV
             echo "${API_URL}"
-      - restore_cache:
-          keys: v1-deploy-frontend-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
           name: Frontend build
           command: |
