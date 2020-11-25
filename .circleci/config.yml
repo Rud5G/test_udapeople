@@ -54,6 +54,7 @@ commands:
           command: |
             set -ex
             curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>
+      #${CIRCLE_PROJECT_REPONAME}_${CIRCLE_BRANCH}_
 
   memstash-read:
     description: Read data (value) from memstash.io by key.
@@ -292,7 +293,7 @@ jobs:
               --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
 
       - memstash-write:
-          key: "${CIRCLE_WORKFLOW_ID}_backend_url"
+          key: "backend_url"
           value: "${BACKEND_IP_ADDRESS}"
       - persist_to_workspace:
           root: ~/
@@ -399,20 +400,43 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
-          name: Install dependencies
-          command: |
-            # your code here
-      - run:
           name: Get backend url
           command: |
-            # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
+            export BACKEND_IP="$(tail -n1 /tmp/workspace/project/.circleci/ansible/inventory.txt)"
+            echo "export API_URL=\"http://${BACKEND_IP}:3030\"" >> $BASH_ENV
+            source $BASH_ENV
             echo "${API_URL}"
+      - restore_cache:
+          keys: v1-deploy-frontend-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |
+            set -ex
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+            . ~/.nvm/nvm.sh
+            nvm install node
+            node -e "console.log('Running Node.js ' + process.version)"
+      - run:
+          name: Frontend build
+          command: |
+            echo "${API_URL}"
+            cd ~/project/frontend
+            npm install
+            npm run build
+      - save_cache:
+          paths:
+            - ~/.nvm
+            - ~/.npm
+            - frontend/node_modules
+          key: v1-deploy-frontend-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
           name: Deploy frontend objects
           command: |
             # your code here
+            cd ~/project/frontend/dist
+            aws s3 cp . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/
       # Here's where you will add some code to rollback on failure
+
 
   deploy-backend:
     <<: *dockeransible
@@ -510,6 +534,7 @@ workflows:
   default:
     jobs:
       - build-backend
+      - build-frontend
       - deploy-infrastructure:
           requires: [build-backend]
           filters:
@@ -519,6 +544,8 @@ workflows:
           requires: [deploy-infrastructure]
       - deploy-backend:
           requires: [build-backend, configure-infrastructure]
+      - deploy-frontend:
+          requires: [build-frontend, configure-infrastructure]
 
 #      - run-migrations
 
