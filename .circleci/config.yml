@@ -372,7 +372,7 @@ jobs:
             ts-node node_modules/typeorm/cli.js migration:show
             npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
-            grep 'executed\ successfully' /tmp/output-migrations.log
+            grep 'executed\ successfully' /tmp/output-migrations.log || echo "no success grepped"
           no_output_timeout: 30m
       - memstash-write:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
@@ -548,10 +548,12 @@ workflows:
           requires: [deploy-infrastructure]
       - deploy-backend:
           requires: [build-backend, configure-infrastructure]
+      - run-migrations:
+          requires: [deploy-backend]
       - deploy-frontend:
           requires: [build-frontend, configure-infrastructure]
 
-#      - run-migrations
+
 
 #      - build-frontend
 #      - build-backend
