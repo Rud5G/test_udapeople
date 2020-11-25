@@ -413,7 +413,7 @@ jobs:
             echo "export NVM_DIR=\"$HOME/.nvm\"" >> $BASH_ENV
             echo "[ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"" >> $BASH_ENV
             source $BASH_ENV
-            nvm install --tls
+            nvm install --lts
             nvm use --lts
             echo "export PATH=\"$PATH\"" >> $BASH_ENV
       - node/install-npm
