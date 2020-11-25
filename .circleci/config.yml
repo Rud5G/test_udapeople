@@ -300,7 +300,6 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt
             - .circleci/ansible/inventory.txt
       - run:
           name: Add backend-url to memory
@@ -320,6 +319,11 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
+          name: Copy inventory to workspace
+          command: |
+            set -ex
+            cp /tmp/workspace/project/.circleci/ansible/inventory.txt .circleci/ansible/inventory.txt
+      - run:
           name: Install dependencies
           command: |
             sudo apt -y update
@@ -331,10 +335,14 @@ jobs:
           command: |
             set -ex
             export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook .circleci/ansible/configure-server.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
+            ansible-playbook -v -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .circleci/ansible/inventory.txt
       - destroy-environment:
           workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment:
@@ -414,6 +422,11 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
+          name: Copy inventory to workspace
+          command: |
+            set -ex
+            cp /tmp/workspace/project/.circleci/ansible/inventory.txt .circleci/ansible/inventory.txt
+      - run:
           name: Install dependencies
           command: |
             sudo apt -y update
@@ -424,11 +437,8 @@ jobs:
           name: Deploy backend
           command: |
             set -ex
-            pwd
-            ls -ahls .
-            echo "export HOMEDIR=\"$(pwd)\"" >> $BASH_ENV
             export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -v -i /tmp/workspace/project/.circleci/ansible/inventory.txt -e BACKEND_CODE=$(pwd)/backend .circleci/ansible/deploy-backend.yml
+            ansible-playbook -v -i .circleci/ansible/inventory.txt -e BACKEND_CODE=$(pwd)/backend .circleci/ansible/deploy-backend.yml
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
