@@ -93,138 +93,86 @@ commands:
 
 
 jobs:
-  build-frontend:
-    <<: *dockernodejs
-    steps:
-      - checkout
-      - run:
-          name: Check node version
-          command: |
-            node --version
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/frontend
-          cache-path: ~/project/frontend/node_modules
-          override-ci-command: npm install
-
-      #      - checkout
-      #      - restore_cache:
-      #          keys: [frontend-build]
-      #      - node/install-npm
-      #      - node/install-packages:
-      #          app-dir: ~/project/frontend
-      #          cache-path: ~/project/frontend/node_modules
-      #          override-ci-command: npm install
-      #      - run:
-      #          name: Run frontend build
-      #          command: |
-      #            cd ~/project/frontend && npm run build
-      #      - save_cache:
-      #          paths: [frontend/node_modules]
-      #          key: frontend-build
-
-
-  #      - slack/notify:
-  #          custom: |
-  #            {
-  #              "blocks": [
-  #                {
-  #                  "type": "section",
-  #                  "fields": [
-  #                    {
-  #                      "type": "plain_text",
-  #                      "text": "*This is a text notification*",
-  #                      "emoji": true
-  #                    }
-  #                  ]
-  #                }
-  #              ]
-  #            }
-  #          event: always
-
-  #      - restore_cache:
-  #          keys: [frontend-build]
-  #      - run:
-  #          name: Build front-end
-  #          command: |
-  #            # Your code here
-  #            exit 1
-  #      - save_cache:
-  #          paths: [frontend/node_modules]
-  #          key: frontend-build
 
   build-backend:
     <<: *dockernodejs
     steps:
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/backend
-          cache-path: ~/project/backend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
-          name: Run backend build
+          name: Back-end build
           command: |
-            cd ~/project/backend && npm run build
-      - persist_to_workspace:
-          root: ~/
+            cd ~/project/backend
+            npm install
+            npm run build
+      - save_cache:
           paths:
-            - project/backend/
+            - ~/.npm
+            - backend/node_modules
+          key: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
 
-  #      - restore_cache:
-  #          keys: [backend-build]
-  #      - run:
-  #          name: Back-end build
-  #          command: |
-  #             # Your code here
-  #             exit 1
-  #      - save_cache:
-  #          paths: [backend/node_modules]
-  #          key: backend-build
+  build-frontend:
+    <<: *dockernodejs
+    steps:
+      - checkout
+      - restore_cache:
+          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+      - run:
+          name: Build front-end
+          command: |
+            cd ~/project/frontend
+            npm install
+            npm run build
+      - save_cache:
+          paths:
+            - ~/.npm
+            - frontend/node_modules
+          key: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
 
   test-frontend:
     <<: *dockernodejs
     steps:
-      # Restore from cache
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/frontend
-          cache-path: ~/project/frontend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
-          name: Run frontend build
+          name: Build front-end
           command: |
-            cd ~/project/frontend && npm run build
+            cd ~/project/frontend
+            npm install
+            npm run build
       - run:
           name: Run frontend test
           command: |
-            cd ~/project/frontend && npm run test
+            cd ~/project/frontend
+            npm run test
       - store_test_results:
-          path: frontend/coverage
+          path: ~/project/frontend/coverage
       - store_artifacts:
-          path: frontend/coverage
+          path: ~/project/frontend/coverage
       - slack/notify:
           event: fail
           mentions: '@Rudger'
           template: basic_fail_1
-  #      - slack/notify:
-  #          event: pass
-  #          template: success_tagged_deploy_1
 
   test-backend:
     <<: *dockernodejs
     steps:
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/backend
-          cache-path: ~/project/backend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+      - run:
+          name: Back-end build
+          command: |
+            cd ~/project/backend
+            npm install
+            npm run build
       - run:
           name: Run backend unit tests
           command: |
-            cd ~/project/backend && npm run test
+            cd ~/project/backend
+            npm run test
       - store_test_results:
           path: ~/project/backend/coverage
       - store_artifacts:
@@ -238,37 +186,45 @@ jobs:
     <<: *dockernodejs
     steps:
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/frontend
-          cache-path: ~/project/frontend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+      - run:
+          name: Build front-end
+          command: |
+            cd ~/project/frontend
+            npm install
+            npm run build
       - run:
           name: Run frontend scan
           command: |
-            cd ~/project/frontend && npm audit --audit-level=critical
+            cd ~/project/frontend
+            npm audit --audit-level=critical
       - store_test_results:
-          path: frontend/coverage
+          path: ~/project/frontend/coverage
       - store_artifacts:
-          path: frontend/coverage
+          path: ~/project/frontend/coverage
 
   scan-backend:
     <<: *dockernodejs
     steps:
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/backend
-          cache-path: ~/project/backend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+      - run:
+          name: Back-end build
+          command: |
+            cd ~/project/backend
+            npm install
+            npm run build
       - run:
           name: Run backend scan
           command: |
-            cd ~/project/backend && npm audit --audit-level=critical
+            cd ~/project/backend
+            npm audit --audit-level=critical
       - store_test_results:
-          path: backend/coverage
+          path: ~/project/backend/coverage
       - store_artifacts:
-          path: backend/coverage
+          path: ~/project/backend/coverage
 
   deploy-infrastructure:
     docker:
@@ -370,18 +326,18 @@ jobs:
     <<: *dockernodejs
     steps:
       - checkout
-      - node/install-npm
-      - node/install-packages:
-          app-dir: ~/project/backend
-          cache-path: ~/project/backend/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
-          name: Run backend build
+          name: Back-end build
           command: |
-            set -x
             cd ~/project/backend
             npm install
             npm run build
+      - run:
+          name: Install typescript + ts-node
+          command: |
+            set -x
             sudo npm install -g typescript
             sudo npm install -g ts-node
       - run:
@@ -415,6 +371,10 @@ jobs:
     <<: *dockeraws
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints: ["cb:13:a2:a6:29:74:29:bc:3a:1f:e5:69:17:b6:ed:3e"]
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: Install dependencies
           command: |
