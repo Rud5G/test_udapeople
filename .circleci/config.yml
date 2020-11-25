@@ -323,7 +323,7 @@ jobs:
           name: Install dependencies
           command: |
             sudo apt -y update
-            sudo apt install -y ca-certificates software-properties-common python3
+            sudo apt install -y ca-certificates software-properties-common python3 rsync
             sudo pip3 install ansible
             sudo pip3 install awscliv2
       - run:
