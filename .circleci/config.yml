@@ -428,6 +428,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
+            set -ex
             export BACKEND_IP="$(tail -n1 /tmp/workspace/project/.circleci/ansible/inventory.txt)"
             echo "export API_URL=\"http://${BACKEND_IP}:3030\"" >> $BASH_ENV
             source $BASH_ENV
@@ -435,6 +436,7 @@ jobs:
       - run:
           name: Frontend build
           command: |
+            set -ex
             echo "${API_URL}"
             cd ~/project/frontend
             npm install
@@ -449,15 +451,8 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd ~/project/frontend
-            aws s3 cp ./dist s3://udapeople-f8d772d
-            aws s3 cp ./dist/.env s3://udapeople-f8d772d/.env
-
-      #            aws s3 cp . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/
-      # Here's where you will add some code to rollback on failure
-
-      #            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      #            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      #            export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+            aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
+            aws s3 cp ./dist/.env s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/.env
 
   deploy-backend:
     <<: *dockeransible
@@ -556,8 +551,6 @@ workflows:
     jobs:
       - build-backend
       - build-frontend
-      - deploy-frontend:
-          requires: [ build-frontend ]
       - deploy-infrastructure:
           requires: [build-backend]
           filters:
@@ -569,8 +562,11 @@ workflows:
           requires: [build-backend, configure-infrastructure]
       - run-migrations:
           requires: [deploy-backend]
+      - deploy-frontend:
+          requires: [run-migrations]
 
-
+#      - deploy-frontend:
+#          requires: [ build-frontend ]
 #          requires: [build-frontend, configure-infrastructure]
 
 #      - build-frontend
