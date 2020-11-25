@@ -99,7 +99,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
           name: Back-end build
           command: |
@@ -110,14 +110,18 @@ jobs:
           paths:
             - ~/.npm
             - backend/node_modules
-          key: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          key: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/backend/dist
 
   build-frontend:
     <<: *dockernodejs
     steps:
       - checkout
       - restore_cache:
-          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
           name: Build front-end
           command: |
@@ -128,14 +132,14 @@ jobs:
           paths:
             - ~/.npm
             - frontend/node_modules
-          key: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          key: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
 
   test-frontend:
     <<: *dockernodejs
     steps:
       - checkout
       - restore_cache:
-          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
           name: Build front-end
           command: |
@@ -161,7 +165,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
           name: Back-end build
           command: |
@@ -187,7 +191,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
       - run:
           name: Build front-end
           command: |
@@ -203,13 +207,15 @@ jobs:
           path: ~/project/frontend/coverage
       - store_artifacts:
           path: ~/project/frontend/coverage
+          destination: artifact-frontend-coverage
+
 
   scan-backend:
     <<: *dockernodejs
     steps:
       - checkout
       - restore_cache:
-          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
           name: Back-end build
           command: |
@@ -225,6 +231,7 @@ jobs:
           path: ~/project/backend/coverage
       - store_artifacts:
           path: ~/project/backend/coverage
+          destination: artifact-backend-coverage
 
   deploy-infrastructure:
     docker:
@@ -327,7 +334,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
       - run:
           name: Back-end build
           command: |
