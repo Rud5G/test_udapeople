@@ -403,7 +403,20 @@ jobs:
             yum install jq -y
             yum install tar -y
             yum install gzip -y
-      - node/install
+
+            echo "$BASH_ENV"
+      - run:
+          name: Install Node + NPM
+          command: |
+            set -ex
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+            NVM_DIR="$HOME/.nvm"
+            echo "export NVM_DIR=\"$HOME/.nvm\"" >> $BASH_ENV
+            echo "[ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"" >> $BASH_ENV
+            source $BASH_ENV
+            npm install --tls
+            npm use --lts
+            echo "export PATH=\"$PATH\"" >> $BASH_ENV
       - node/install-npm
       - node/install-packages:
           app-dir: ~/project/backend
