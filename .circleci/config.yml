@@ -247,8 +247,7 @@ jobs:
           destination: artifact-backend-coverage
 
   deploy-infrastructure:
-    docker:
-      - image: amazon/aws-cli
+    <<: *dockeraws
     steps:
       - checkout
       - run:
@@ -398,11 +397,17 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["cb:13:a2:a6:29:74:29:bc:3a:1f:e5:69:17:b6:ed:3e"]
       - run:
-          name: Install dependencies for workspace
+          name: Install dependencies
           command: |
             set -ex
             yum update -y
-            yum install -y tar
+            yum install jq -y
+            yum install tar -y
+            yum install gzip -y
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+            . ~/.nvm/nvm.sh
+            nvm install node
+            node -e "console.log('Running Node.js ' + process.version)"
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -414,16 +419,6 @@ jobs:
             echo "${API_URL}"
       - restore_cache:
           keys: v1-deploy-frontend-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
-      - run:
-          name: Install dependencies
-          command: |
-            set -ex
-            yum update -y
-            yum install -y tar
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-            . ~/.nvm/nvm.sh
-            nvm install node
-            node -e "console.log('Running Node.js ' + process.version)"
       - run:
           name: Frontend build
           command: |
