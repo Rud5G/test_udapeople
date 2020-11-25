@@ -440,10 +440,14 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
-          name: Copy inventory to workspace
+          name: Copy tmp-workspace to workspace
           command: |
-            set -ex
+            set -x
+            ls -ahls /tmp/workspace/
+            ls -ahls /tmp/workspace/project/
+            ls -ahls /tmp/workspace/project/backend/
             cp /tmp/workspace/project/.circleci/ansible/inventory.txt .circleci/ansible/inventory.txt
+            cp -pr /tmp/workspace/project/backend/dist backend/dist
       - run:
           name: Install dependencies
           command: |
@@ -452,19 +456,9 @@ jobs:
             sudo pip3 install ansible
             sudo pip3 install awscliv2
       - run:
-          name: Run backend build
-          command: |
-            set -ex
-            cd ~/project/backend
-            npm install
-            npm run build
-      - run:
           name: Deploy backend
           command: |
             set -ex
-            ls -ahls /tmp/workspace/
-            ls -ahls /tmp/workspace/project/
-            ls -ahls /tmp/workspace/project/backend/
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -v -i .circleci/ansible/inventory.txt -e BACKEND_CODE=$(pwd)/backend .circleci/ansible/deploy-backend.yml
             EXIT_CODE=$?
