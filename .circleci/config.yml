@@ -553,7 +553,7 @@ workflows:
       - build-backend
       - build-frontend
       - deploy-frontend:
-          requires: [ deploy-frontend ]
+          requires: [ build-frontend ]
       - deploy-infrastructure:
           requires: [build-backend]
           filters:
