@@ -426,9 +426,9 @@ jobs:
             set -ex
             pwd
             ls -ahls .
-            
+            echo "export HOMEDIR=\"$(pwd)\"" >> $BASH_ENV
             export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook .circleci/ansible/deploy-backend.yml -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
+            ansible-playbook .circleci/ansible/deploy-backend.yml -e BACKEND_CODE=$(pwd)/backend -i /tmp/workspace/project/.circleci/ansible/inventory.txt --verbose
 
             EXIT_CODE=$?
             echo "$EXIT_CODE"

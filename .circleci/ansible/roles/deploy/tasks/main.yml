@@ -10,14 +10,10 @@
     printenv
     export
 
-- name: "update apt packages."
-  become: yes
-  apt:
-    update_cache: yes
-
 - name: "upgrade packages"
   become: yes
   apt:
+    update_cache: 'yes'
     upgrade: yes
 
 - name: "remove dependencies that are no longer required"
@@ -32,7 +28,32 @@
     state: latest
     update_cache: yes
 
+- name: "Creates directory /var/www"
+  become: yes
+  file:
+    path: "/var/www"
+    state: directory
+    owner: ubuntu
+    group: www-data
+    mode: '0775'
+
 - name: "Copy backend code to the host."
-  copy:
-    src: "{{ BACKEND_CODE }}"
+  synchronize:
+    src: '{{ BACKEND_CODE }}/dist'
     dest: "/var/www/html/"
+
+
+
+- name: "Creates directory /var/backend"
+  become: yes
+  file:
+    path: "/var/backend"
+    state: directory
+    owner: ubuntu
+    group: www-data
+    mode: '0775'
+
+- name: "Copy backend code to the host."
+  synchronize:
+    src: '{{ BACKEND_CODE }}'
+    dest: "/var/backend"
