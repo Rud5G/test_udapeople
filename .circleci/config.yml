@@ -52,9 +52,22 @@ commands:
       - run:
           name: Send data to memstash.io
           command: |
+            set -ex
             curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>
-            exit 0
 
+  memstash-read:
+    description: Read data (value) from memstash.io by key.
+    parameters:
+      key:
+        type: string
+      token:
+        type: env_var_name
+        default: MEMSTASH_TOKEN
+    steps:
+      - run:
+          name: Send data to memstash.io
+          command: |
+            curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request GET https://api.memstash.io/values/<< parameters.key >>
 
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -67,7 +80,6 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name "<<parameters.workflowid>>"
-            exit 0
 
     #  aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflowid>>"
     #  aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflowid>>"
@@ -273,11 +285,15 @@ jobs:
                 --filters "Name=tag:project,Values=Udapeople" \
                 --output text | tail -1)"
             echo "$BACKEND_IP_ADDRESS" >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
-            echo "export BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
+            echo "export __BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
+
             curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" \
               --request PUT \
               --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
+
+      - memstash-write:
+          key: "${CIRCLE_WORKFLOW_ID}_backend_url"
+          value: "${BACKEND_IP_ADDRESS}"
       - persist_to_workspace:
           root: ~/
           paths:
