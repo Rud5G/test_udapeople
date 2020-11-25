@@ -2,7 +2,7 @@ version: 2.1
 
 dockernodejs: &dockernodejs
   docker:
-    - image: cimg/node:lts
+    - image: cimg/node:13.11
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -106,10 +106,24 @@ jobs:
           app-dir: ~/project/frontend
           cache-path: ~/project/frontend/node_modules
           override-ci-command: npm install
-      - run:
-          name: Run frontend build
-          command: |
-            cd ~/project/frontend && npm run build
+
+      #      - checkout
+      #      - restore_cache:
+      #          keys: [frontend-build]
+      #      - node/install-npm
+      #      - node/install-packages:
+      #          app-dir: ~/project/frontend
+      #          cache-path: ~/project/frontend/node_modules
+      #          override-ci-command: npm install
+      #      - run:
+      #          name: Run frontend build
+      #          command: |
+      #            cd ~/project/frontend && npm run build
+      #      - save_cache:
+      #          paths: [frontend/node_modules]
+      #          key: frontend-build
+
+
   #      - slack/notify:
   #          custom: |
   #            {
@@ -152,6 +166,10 @@ jobs:
           name: Run backend build
           command: |
             cd ~/project/backend && npm run build
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/backend/
 
   #      - restore_cache:
   #          keys: [backend-build]
@@ -444,6 +462,9 @@ jobs:
           name: Deploy backend
           command: |
             set -ex
+            ls -ahls /tmp/workspace/
+            ls -ahls /tmp/workspace/project/
+            ls -ahls /tmp/workspace/project/backend/
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -v -i .circleci/ansible/inventory.txt -e BACKEND_CODE=$(pwd)/backend .circleci/ansible/deploy-backend.yml
             EXIT_CODE=$?
@@ -511,14 +532,16 @@ jobs:
 workflows:
   default:
     jobs:
+      - build-backend
       - deploy-infrastructure:
+          requires: [build-backend]
           filters:
             branches:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - deploy-backend:
-          requires: [configure-infrastructure]
+          requires: [build-backend, configure-infrastructure]
 
 #      - run-migrations
 
