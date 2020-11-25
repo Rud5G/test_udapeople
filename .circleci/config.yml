@@ -117,6 +117,7 @@ jobs:
           name: Back-end build
           command: |
             cd ~/project/backend
+            envsubst < ~/project/.circleci/tpl/env.template > .env
             npm install
             npm run build
       - save_cache:
@@ -127,6 +128,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
+            - project/backend/.env
             - project/backend/dist
 
   build-frontend:
@@ -222,7 +224,6 @@ jobs:
           path: ~/project/frontend/coverage
           destination: artifact-frontend-coverage
 
-
   scan-backend:
     <<: *dockernodejs
     steps:
@@ -286,11 +287,9 @@ jobs:
                 --output text | tail -1)"
             echo "$BACKEND_IP_ADDRESS" >> .circleci/ansible/inventory.txt
             echo "export __BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
-
             curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" \
               --request PUT \
               --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
-
       - memstash-write:
           key: "backend_url"
           value: "${BACKEND_IP_ADDRESS}"
@@ -336,10 +335,10 @@ jobs:
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
+          #      - persist_to_workspace:
+          #          root: ~/
+          #          paths:
+          #            - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment:
@@ -355,6 +354,7 @@ jobs:
           name: Back-end build
           command: |
             cd ~/project/backend
+            envsubst < ~/project/.circleci/tpl/env.template > .env
             npm install
             npm run build
       - run:
@@ -369,7 +369,6 @@ jobs:
             set -x
             cd ~/project/backend
             ts-node node_modules/typeorm/cli.js version
-            envsubst < ~/project/.circleci/tpl/env.template > .env
             ts-node node_modules/typeorm/cli.js migration:show
             npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
@@ -404,6 +403,7 @@ jobs:
             yum install jq -y
             yum install tar -y
             yum install gzip -y
+      - node/install
       - node/install-npm
       - node/install-packages:
           app-dir: ~/project/backend
