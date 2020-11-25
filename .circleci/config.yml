@@ -434,6 +434,13 @@ jobs:
             sudo pip3 install ansible
             sudo pip3 install awscliv2
       - run:
+          name: Run backend build
+          command: |
+            set -ex
+            cd ~/project/backend
+            npm install
+            npm run build
+      - run:
           name: Deploy backend
           command: |
             set -ex
