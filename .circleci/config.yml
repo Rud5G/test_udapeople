@@ -20,6 +20,9 @@ dockeraws: &dockeraws
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
+      aws_auth:
+        aws_access_key_id: $AWS_ACCESS_KEY_ID
+        aws_secret_access_key: $AWS_SECRET_ACCESS_KEY
 
 orbs:
   node: circleci/node@4.1.0
@@ -397,6 +400,12 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["cb:13:a2:a6:29:74:29:bc:3a:1f:e5:69:17:b6:ed:3e"]
+      - run:
+          name: Install dependencies for workspace
+          command: |
+            set -ex
+            yum update -y
+            yum install -y tar
       - attach_workspace:
           at: /tmp/workspace
       - run:
@@ -412,6 +421,8 @@ jobs:
           name: Install dependencies
           command: |
             set -ex
+            yum update -y
+            yum install -y tar
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
             . ~/.nvm/nvm.sh
             nvm install node
