@@ -403,7 +403,6 @@ jobs:
             yum install jq -y
             yum install tar -y
             yum install gzip -y
-
             echo "$BASH_ENV"
       - run:
           name: Install Node + NPM
@@ -451,7 +450,8 @@ jobs:
             export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
             cd ~/project/frontend/dist
-            aws s3 cp . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/
+            aws s3 cp . s3://udapeople-f8d772d/
+      #            aws s3 cp . s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/
       # Here's where you will add some code to rollback on failure
 
 
@@ -552,6 +552,8 @@ workflows:
     jobs:
       - build-backend
       - build-frontend
+      - deploy-frontend:
+          requires: [ deploy-frontend ]
       - deploy-infrastructure:
           requires: [build-backend]
           filters:
@@ -563,10 +565,9 @@ workflows:
           requires: [build-backend, configure-infrastructure]
       - run-migrations:
           requires: [deploy-backend]
-      - deploy-frontend:
-          requires: [build-frontend, configure-infrastructure]
 
 
+#          requires: [build-frontend, configure-infrastructure]
 
 #      - build-frontend
 #      - build-backend
