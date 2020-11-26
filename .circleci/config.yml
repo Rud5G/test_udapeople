@@ -312,7 +312,7 @@ jobs:
             echo "export BACKEND_IP_ADDRESS=\"$BACKEND_IP_ADDRESS\"" >> $BASH_ENV
       - memstash-write:
           key: "backend_url"
-          value: "${BACKEND_IP_ADDRESS}"
+          value: "http://${BACKEND_IP_ADDRESS}:3030"
           token: MEMSTASH_TOKEN
       - persist_to_workspace:
           root: ~/
@@ -531,13 +531,23 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            exit 1
-            # your code here
+            export BACKEND_STATUS_ENDPOINT="${BACKEND_URL}/api/status"
+            if test "$(curl -s "${BACKEND_STATUS_ENDPOINT}")" == "1";
+            then
+              return 1
+            else
+              return 0
+            fi
       - run:
           name: Frontend smoke test.
           command: |
-            # your code here
-            exit 1
+            FRONTEND_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-1.amazonaws.com"
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 0
+            else
+              return 1
+            fi
       # Here's where you will add some code to rollback on failure
 
   cloudfront-update:
