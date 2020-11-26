@@ -448,8 +448,8 @@ jobs:
           command: |
             cd ~/project/frontend
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
-            envsubst < ~/project/.circleci/tpl/env.template > .env
-            aws s3 cp ./dist/.env s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/.env
+            envsubst < ~/project/.circleci/tpl/env.template > ./.env
+            aws s3 cp ./.env s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/.env
 
   deploy-backend:
     <<: *dockeransible
