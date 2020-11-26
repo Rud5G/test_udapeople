@@ -436,6 +436,8 @@ jobs:
             echo "${API_URL}"
             cd ~/project/frontend
             npm install
+            envsubst < ~/project/.circleci/tpl/env.template | grep -v TYPEORM > ./.env
+            echo "API_URL=\"$API_URL\"" >> ./.env
             npm run build
       - save_cache:
           paths:
@@ -448,8 +450,6 @@ jobs:
           command: |
             cd ~/project/frontend
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
-            envsubst < ~/project/.circleci/tpl/env.template > ./.env
-            aws s3 cp ./.env s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/.env
 
   deploy-backend:
     <<: *dockeransible
