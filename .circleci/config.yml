@@ -112,7 +112,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -124,7 +124,7 @@ jobs:
           paths:
             - ~/.npm
             - backend/node_modules
-          key: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          key: v1-backend-build-{{ .Branch }}
       - persist_to_workspace:
           root: ~/
           paths:
@@ -180,7 +180,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -229,7 +229,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -349,7 +349,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}-{{ checksum "~/project/backend/package-lock.json" }}
+          keys: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -419,8 +419,8 @@ jobs:
             echo "export PATH=\"$PATH\"" >> $BASH_ENV
       - node/install-npm
       - node/install-packages:
-          app-dir: ~/project/backend
-          cache-path: ~/project/backend/node_modules
+          app-dir: ~/project/frontend
+          cache-path: ~/project/frontend/node_modules
           override-ci-command: npm install
       - attach_workspace:
           at: /tmp/workspace
