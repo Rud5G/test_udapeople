@@ -21,6 +21,10 @@ dockeraws: &dockeraws
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
 
+globalenvvars: &globalenvvars
+  environment:
+    MEMSTASH_TOKEN: 94fdaf18-8f2a-49d0-8a5f-632781e436de
+
 orbs:
   node: circleci/node@4.1.0
   slack: circleci/slack@4.0.2
@@ -47,7 +51,7 @@ commands:
         type: string
       token:
         type: env_var_name
-        default: MEMSTASH_TOKEN
+        default: $MEMSTASH_TOKEN
     steps:
       - run:
           name: Send data to memstash.io
@@ -66,9 +70,27 @@ commands:
         default: MEMSTASH_TOKEN
     steps:
       - run:
-          name: Send data to memstash.io
+          name: Read data from memstash.io
           command: |
-            curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request GET https://api.memstash.io/values/<< parameters.key >>
+            set -ex
+            MEMSTASH_VALUE=$(curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request GET https://api.memstash.io/values/<< parameters.key >>)
+            MEMSTASH_KEY=<< parameters.key >>
+            echo "export $MEMSTASH_KEY=\"$MEMSTASH_VALUE\"" >> $BASH_ENV
+            source $BASH_ENV
+            echo $MY_ENV
+
+  run-command:
+    parameters:
+      NUM:
+        type: string
+    steps:
+      - checkout
+      - run:
+          command: |
+            echo "export MY_ENV=MY_<< parameters.NUM >>_ENV" >> $BASH_ENV
+            source $BASH_ENV
+            echo $MY_ENV
+
 
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -249,6 +271,7 @@ jobs:
 
   deploy-infrastructure:
     <<: *dockeraws
+    <<: *globalenvvars
     steps:
       - checkout
       - run:
@@ -293,6 +316,7 @@ jobs:
       - memstash-write:
           key: "backend_url"
           value: "${BACKEND_IP_ADDRESS}"
+          token: "$MEMSTASH_TOKEN"
       - persist_to_workspace:
           root: ~/
           paths:
@@ -463,9 +487,6 @@ jobs:
           name: Copy tmp-workspace to workspace
           command: |
             set -x
-            ls -ahls /tmp/workspace/
-            ls -ahls /tmp/workspace/project/
-            ls -ahls /tmp/workspace/project/backend/
             cp /tmp/workspace/project/.circleci/ansible/inventory.txt .circleci/ansible/inventory.txt
             cp -pr /tmp/workspace/project/backend/dist backend/dist
       - run:
@@ -488,25 +509,38 @@ jobs:
 
   smoke-test:
     <<: *dockeraws
-      # Lightweight Docker image
+    <<: *globalenvvars
     steps:
-      # Checkout code from git
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            set -ex
+            yum update -y
+            yum install curl -y
+            yum install jq -y
+            yum install tar -y
+            yum install gzip -y
+            yum install perl -y
+            yum install which -y
+            yum install gettext -y
+      - memstash-read:
+          key: "backend_url"
+          token: "$MEMSTASH_TOKEN"
       - run:
           name: Get backend url
           command: |
-            # your code here
+            export BACKEND_URL=$backend_url
+            echo "$BACKEND_URL"
       - run:
           name: Backend smoke test.
           command: |
+            exit 1
             # your code here
       - run:
           name: Frontend smoke test.
           command: |
             # your code here
+            exit 1
       # Here's where you will add some code to rollback on failure
 
   cloudfront-update:
