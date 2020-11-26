@@ -405,7 +405,6 @@ jobs:
             yum install gzip -y
             yum install perl -y
             yum install which -y
-            cat $(echo "$BASH_ENV")
       - run:
           name: Install Node + NPM
           command: |
