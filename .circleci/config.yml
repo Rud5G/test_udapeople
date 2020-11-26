@@ -522,7 +522,7 @@ jobs:
             yum install gettext -y
       - memstash-read:
           key: "backend_url"
-          token: "$MEMSTASH_TOKEN"
+          token: MEMSTASH_TOKEN
       - run:
           name: Get backend url
           command: |
