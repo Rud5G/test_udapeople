@@ -335,10 +335,6 @@ jobs:
             EXIT_CODE=$?
             echo "$EXIT_CODE"
             exit $EXIT_CODE
-          #      - persist_to_workspace:
-          #          root: ~/
-          #          paths:
-          #            - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment:
@@ -440,7 +436,6 @@ jobs:
             cd ~/project/frontend
             npm install
             npm run build
-            cp /tmp/workspace/project/backend/.env .
       - save_cache:
           paths:
             - ~/.nvm
@@ -452,6 +447,7 @@ jobs:
           command: |
             cd ~/project/frontend
             aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
+            envsubst < ~/project/.circleci/tpl/env.template > .env
             aws s3 cp ./dist/.env s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/.env
 
   deploy-backend:
