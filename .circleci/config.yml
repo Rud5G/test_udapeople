@@ -51,7 +51,7 @@ commands:
         type: string
       token:
         type: env_var_name
-        default: $MEMSTASH_TOKEN
+        default: MEMSTASH_TOKEN
     steps:
       - run:
           name: Send data to memstash.io
