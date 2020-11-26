@@ -316,7 +316,7 @@ jobs:
       - memstash-write:
           key: "backend_url"
           value: "${BACKEND_IP_ADDRESS}"
-          token: "$MEMSTASH_TOKEN"
+          token: MEMSTASH_TOKEN
       - persist_to_workspace:
           root: ~/
           paths:
