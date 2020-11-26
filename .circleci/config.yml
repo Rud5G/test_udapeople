@@ -438,9 +438,9 @@ jobs:
             set -ex
             echo "${API_URL}"
             cd ~/project/frontend
-            cp /tmp/workspace/project/backend/.env .
             npm install
             npm run build
+            cp /tmp/workspace/project/backend/.env .
       - save_cache:
           paths:
             - ~/.nvm
