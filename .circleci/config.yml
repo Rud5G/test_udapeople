@@ -405,7 +405,7 @@ jobs:
             yum install gzip -y
             yum install perl -y
             yum install which -y
-            echo "$BASH_ENV"
+            cat $(echo "$BASH_ENV")
       - run:
           name: Install Node + NPM
           command: |
@@ -439,6 +439,7 @@ jobs:
             set -ex
             echo "${API_URL}"
             cd ~/project/frontend
+            cp /tmp/workspace/project/backend/.env .
             npm install
             npm run build
       - save_cache:
