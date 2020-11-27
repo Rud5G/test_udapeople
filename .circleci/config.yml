@@ -152,7 +152,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -163,14 +163,14 @@ jobs:
           paths:
             - ~/.npm
             - frontend/node_modules
-          key: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          key: v1-frontend-build-{{ .Branch }}
 
   test-frontend:
     <<: *dockernodejs
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -222,7 +222,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          keys: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -379,9 +379,8 @@ jobs:
           command: |
             set -x
             cd ~/project/backend
-            ts-node node_modules/typeorm/cli.js version
-            ts-node node_modules/typeorm/cli.js migration:show
-            npm run migrations > /tmp/output-migrations.log
+            touch /tmp/output-migrations.log
+            sudo -E npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
             grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 30m
@@ -459,7 +458,7 @@ jobs:
             - ~/.nvm
             - ~/.npm
             - frontend/node_modules
-          key: v1-deploy-frontend-{{ .Branch }}-{{ checksum "~/project/frontend/package-lock.json" }}
+          key: v1-deploy-frontend-{{ .Branch }}
       - run:
           name: Deploy frontend objects
           command: |
