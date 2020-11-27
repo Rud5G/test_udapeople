@@ -79,19 +79,10 @@ commands:
             source $BASH_ENV
             echo $MY_ENV
 
-  run-command:
-    parameters:
-      NUM:
-        type: string
-    steps:
-      - checkout
-      - run:
-          command: |
-            echo "export MY_ENV=MY_<< parameters.NUM >>_ENV" >> $BASH_ENV
-            source $BASH_ENV
-            echo $MY_ENV
-
-
+  #  At the top of your config file, create a 'command' named "destroy-environment" to remove infrastructure if something goes wrong
+  #  Trigger rollback jobs if the smoke tests or any following jobs fail.
+  #  Delete files uploaded to S3.
+  #  Destroy the current CloudFormation stacks using the same stack names you used when creating the stack earlier (front-end and back-end).
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -107,6 +98,9 @@ commands:
     #  aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflowid>>"
     #  aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflowid>>"
 
+  #  At the top of your config file, create a “command” named revert-migrations to roll back any migrations that were successfully applied during this CI/CD workflow
+  #  Trigger rollback jobs if the smoke tests or any following jobs fail.
+  #  Revert the last migration (IF a new migration was applied) on the database to that it goes back to the way it was before. You can use that value you saved in MemStash.io to know if you should revert any migrations.
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
@@ -389,7 +383,7 @@ jobs:
             ts-node node_modules/typeorm/cli.js migration:show
             npm run migrations > /tmp/output-migrations.log
             cat /tmp/output-migrations.log
-            grep 'executed\ successfully' /tmp/output-migrations.log || echo "no success grepped"
+            grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 30m
       - memstash-write:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
@@ -544,7 +538,7 @@ jobs:
           command: |
             set -ex
             FRONTEND_URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com"
-            if curl "${FRONTEND_URL}" | grep "Welcome"
+            if curl -s "${FRONTEND_URL}" | grep "Welcome"
             then
               exit 0
             else
