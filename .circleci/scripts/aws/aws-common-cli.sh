@@ -71,11 +71,9 @@ get_platform_env() {
     SYS_INFO="$(uname -o)"
 
     # PLATFORM CHECK: mac vs. alpine vs. other linux
-    if test -n "$(echo "$SYS_INFO" | grep "Darwin")";
-    then
+    if test -n "$(echo "$SYS_INFO" | grep "Darwin")"; then
         SYS_ENV_PLATFORM="darwin"
-    elif test -n "$(echo "$SYS_INFO" | grep "Linux")";
-    then
+    elif test -n "$(echo "$SYS_INFO" | grep "Linux")"; then
         SYS_ENV_PLATFORM="linux"
     else
         error_exit "This platform appears to be unsupported: $SYS_INFO"
@@ -86,20 +84,17 @@ get_platform_env() {
 
 # Usage: aws_check_dependencies
 aws_check_dependencies() {
-    if ! env_has_dependency "jq";
-    then
+    if ! env_has_dependency "jq"; then
         msg "Your environment does not seem to have jq installed, a requirement."
         error_exit "Please utilize an envionment with jq installed."
     fi
 
-    if ! env_has_dependency "python3" && ! env_has_dependency "python";
-    then
+    if ! env_has_dependency "python3" && ! env_has_dependency "python"; then
         msg "Your environment does not seem to have Python installed, a requirement of the AWS CLI."
         error_exit "Please utilize an envionment with Python installed."
     fi
 
-    if ! env_has_dependency "unzip";
-    then
+    if ! env_has_dependency "unzip"; then
         msg "Your environment does not seem to have UnZip installed, a requirement of the AWS CLI."
         error_exit "Please utilize an envionment with UnZip installed."
     fi
@@ -114,8 +109,7 @@ get_sudo() {
             error_exit "\$EUID = $EUID, but sudo is not available. Please utilize an envionment with sudo installed."
         fi
 
-        if test "$(is_interactive)" != "0";
-        then
+        if test "$(is_interactive)" != "0"; then
             if ! sudo -n true 2>/dev/null; then
                 error_exit "this is a non-interactive script, and does not run as (passordless) root."
             fi
@@ -133,14 +127,14 @@ is_interactive() {
     # shellcheck disable=SC2005
     echo $-
     case $- in
-        *i*)
-            echo "0"
-            ;;
-        *)
-            echo $SHLVL
-    exit
-            echo "1"
-            ;;
+    *i*)
+        echo "0"
+        ;;
+    *)
+        echo $SHLVL
+        exit
+        echo "1"
+        ;;
     esac
 }
 
@@ -165,8 +159,7 @@ install_aws_v2() {
     SYS_ENV_PLATFORM="$(get_platform_env)"
     SUDO="$(get_sudo)"
 
-    if env_has_dependency "aws";
-    then
+    if env_has_dependency "aws"; then
         UPGRADE_ARG="--update"
     fi
 
@@ -194,17 +187,14 @@ install_aws_v2() {
     esac
 }
 
-
 install_aws() {
     local CURRENT_AWS_VERSION
     CURRENT_AWS_VERSION=$(aws_cli_installed_version)
 
     aws_check_dependencies
 
-    if test "$CURRENT_AWS_VERSION" -ne "$AWS_CLI_VERSION";
-    then
-        if ! env_has_dependency "aws";
-        then
+    if test "$CURRENT_AWS_VERSION" -ne "$AWS_CLI_VERSION"; then
+        if ! env_has_dependency "aws"; then
             msg "AWS is not installed"
         else
             msg "current installed install AWS version $CURRENT_AWS_VERSION"
@@ -218,6 +208,23 @@ install_aws() {
     else
         msg "aws-cli/v2 installed."
     fi
+}
+
+# Usage: get_all_tags <resource_id>
+#
+#   Writes to STDOUT all the tags for the resource_id.
+get_all_tags() {
+    local resource_id=$1
+    local instance_tags
+
+    if test -z "${INSTANCE_TAGS:-}"; then
+        instance_tags=$(aws ec2 describe-tags \
+            --filters "Name=resource-id,Values=${resource_id}" \
+            --query 'Tags[].[Key,Value]' --output text)
+        INSTANCE_TAGS="${instance_tags,,}"
+    fi
+
+    echo "$INSTANCE_TAGS"
 }
 
 #  CREATE_IN_PROGRESS
@@ -243,13 +250,17 @@ install_aws() {
 #  IMPORT_ROLLBACK_FAILED
 #  IMPORT_ROLLBACK_COMPLETE
 
+aws_disable_pager() {
+    export AWS_PAGER=""
+}
+
 # Usage: aws_list_stacks <message>
 #
 #   Writes <message> to STDERR only if $DEBUG is true, otherwise has no effect.
 aws_list_stacks() {
-#    local statuses=
+    #    local statuses=
     aws cloudformation list-stacks
-#    --stack-status-filter
+    #    --stack-status-filter
 }
 
 aws_describe_stack() {
@@ -257,21 +268,66 @@ aws_describe_stack() {
     aws cloudformation describe-stacks --stack-name "$stackname"
 }
 
+#    {
+#      "StackId": "arn:aws:cloudformation:us-west-2:877977268182:stack/udapeople-frontend-3d3f6b6/6790beb0-326f-11eb-9d22-02006f42ed61",
+#      "StackName": "udapeople-frontend-3d3f6b6",
+#      "TemplateDescription": "UdaPeople frontend stack.\n",
+#      "CreationTime": "2020-11-29T18:19:22.637000+00:00",
+#      "LastUpdatedTime": "2020-11-29T18:19:28.141000+00:00",
+#      "StackStatus": "CREATE_COMPLETE",
+#      "DriftInformation": {
+#        "StackDriftStatus": "NOT_CHECKED"
+#      }
+#    }
 
-aws_list_stack_resources() {
-    local stackname=$1
-    aws cloudformation list-stack-resources \
-        --stack-name "$stackname"
+aws_list_json_not_deleted_stacks() {
+    local stacklist
+    # aws cloudformation list-stacks | jq -r '.StackSummaries[] | select([.StackStatus] | inside(["DELETE_COMPLETE", "DELETE_IN_PROGRESS"]) | not) | {StackName, StackId}'
+    aws_disable_pager
+    stacklist=$(aws cloudformation list-stacks | jq -r '.StackSummaries[] | select([.StackStatus] | inside(["DELETE_COMPLETE", "DELETE_IN_PROGRESS"]) | not)')
+    echo "$stacklist"
 }
 
+aws_list_json_stack_resources() {
+    local stackname=$1
+    local filter_resourcetype="${2:-}"
+    local stackresources
+
+    stackresources=$(aws cloudformation list-stack-resources \
+        --stack-name "$stackname" | jq -r '.StackResourceSummaries[]')
+
+    if test -n "$filter_resourcetype"; then
+        stackresources=$(jq -r '. | select(.ResourceType == "'"$filter_resourcetype"'")' <<<"$stackresources")
+    fi
+
+    echo "$stackresources"
+}
+
+# grep -q 'hello' <<< 'hello world'
+# jq '.[] | select(.location=="Stockholm")' json
 
 aws_delete_stack() {
     local stackname=$1
-    aws cloudformation list-stack-resources \
-        --stack-name "$stackname"
-}
+    local not_deleted_stacknames
+    local resource_type_s3_bucket="AWS::S3::Bucket"
 
+    not_deleted_stacknames=$(aws_list_json_not_deleted_stacks | jq -r '.StackName')
+
+    if ! grep -q "$stackname" <<<"$not_deleted_stacknames"; then
+        error_exit "$stackname is not found in list deleteable stacknames"
+    fi
+
+#    aws_list_json_stack_resources "$stackname" "AWS::EC2::Instance"
+
+    # hiero: checken of het niet kunnen vinden een issue oplevert.
+    
+    aws_list_json_stack_resources "$stackname" "$resource_type_s3_bucket"
+
+    #    echo "test"
+
+    #    aws cloudformation list-stack-resources \
+    #        --stack-name "$stackname"
+}
 
 # Install AWS-cli v2.
 install_aws
-
