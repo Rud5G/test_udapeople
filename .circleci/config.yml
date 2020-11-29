@@ -1,5 +1,12 @@
 version: 2.1
 
+dockerdefault: &dockerdefault
+  docker:
+    - image: cimg/python:3.8-node
+      auth:
+        username: $DOCKERHUB_USERNAME
+        password: $DOCKERHUB_PASSWORD
+
 dockernodejs: &dockernodejs
   docker:
     - image: cimg/node:lts
@@ -33,14 +40,6 @@ orbs:
   #              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
 
 commands:
-  sayhello:
-    description: "A very simple command for demonstration purposes"
-    parameters:
-      to:
-        type: string
-        default: "Hello World"
-    steps:
-      - run: echo << parameters.to >>
 
   memstash-write:
     description: Write data (key + value) to memstash.io.
@@ -77,7 +76,26 @@ commands:
             MEMSTASH_KEY=<< parameters.key >>
             echo "export $MEMSTASH_KEY=\"$MEMSTASH_VALUE\"" >> $BASH_ENV
             source $BASH_ENV
-            echo $MY_ENV
+            echo $MEMSTASH_KEY
+
+  delete-stack:
+    description: Delete cloudformation stack
+    parameters:
+      stack-name:
+        type: string
+      token:
+        type: env_var_name
+        default: MEMSTASH_TOKEN
+    steps:
+      - run:
+          name: Run delete-stack script
+          environment:
+            DS_STACKNAME: << parameters.stack-name >>
+          command: << include(.circleci/scripts/delete-stack.sh) >>
+          #          command: |
+          #            set -ex
+          #            # check if stack exists, if false, quit.
+          #            aws cloudformation delete-stack --stack-name "<< parameters.stack-name >>"
 
   #  At the top of your config file, create a 'command' named "destroy-environment" to remove infrastructure if something goes wrong
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
@@ -359,29 +377,19 @@ jobs:
     <<: *dockernodejs
     steps:
       - checkout
-      - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
             cd ~/project/backend
-            envsubst < ~/project/.circleci/tpl/env.template > .env
             npm install
-            npm run build
-      - run:
-          name: Install typescript + ts-node
-          command: |
-            set -x
-            sudo npm install -g typescript
-            sudo npm install -g ts-node
+            envsubst < ~/project/.circleci/tpl/env.template > .env
       - run:
           name: Run migrations
           command: |
             set -x
             cd ~/project/backend
             touch /tmp/output-migrations.log
-            sudo -E npm run migrations > /tmp/output-migrations.log
-            cat /tmp/output-migrations.log
+            npm run migrations > /tmp/output-migrations.log
             grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 30m
       - memstash-write:
@@ -580,77 +588,52 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-backend
       - build-frontend
+      - build-backend
+      #      - test-frontend:
+      #          requires: [build-frontend]
+      #      - test-backend:
+      #          requires: [build-backend]
+      #      - scan-backend:
+      #          requires: [build-backend]
+      #      - scan-frontend:
+      #          requires: [build-frontend]
       - deploy-infrastructure:
-          requires: [build-backend]
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           filters:
             branches:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      - deploy-backend:
-          requires: [build-backend, configure-infrastructure]
       - run-migrations:
-          requires: [deploy-backend]
+          requires: [configure-infrastructure]
       - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
 
-#      - deploy-frontend:
-#          requires: [ build-frontend ]
-#          requires: [build-frontend, configure-infrastructure]
-
-#      - build-frontend
-#      - build-backend
-#      - test-frontend:
-#          requires: [build-frontend]
-#      - test-backend:
-#          requires: [build-backend]
-#      - scan-backend:
-#          requires: [test-backend]
-#      - scan-frontend:
-#          requires: [test-frontend]
-#      - deploy-infrastructure:
-#          requires: [test-frontend, test-backend]
-#          filters:
-#            branches:
-#              only: [test-feature-branch]
-#      - configure-infrastructure:
-#          requires: [deploy-infrastructure]
-#      - run-migrations:
-#          requires: [deploy-infrastructure]
-
-#  default:
-#    jobs:
-#      - build-frontend
-#      - build-backend
-#      - test-frontend:
-#          requires: [build-frontend]
-#      - test-backend:
-#          requires: [build-backend]
-#      - scan-backend:
-#          requires: [build-backend]
-#      - scan-frontend:
-#          requires: [build-frontend]
-#      - deploy-infrastructure:
-#          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-#          filters:
-#            branches:
-#              only: [test-feature-branch]
-#      - configure-infrastructure:
-#          requires: [deploy-infrastructure]
-#      - run-migrations:
-#          requires: [configure-infrastructure]
-#      - deploy-frontend:
-#          requires: [run-migrations]
-#      - deploy-backend:
-#          requires: [run-migrations]
-#      - smoke-test:
-#          requires: [deploy-backend, deploy-frontend]
-#      - cloudfront-update:
-#          requires: [smoke-test]
-#      - cleanup:
-#          requires: [cloudfront-update]
-
+  #  default:
+  #    jobs:
+  #      - build-backend
+  #      - build-frontend
+  #      - deploy-infrastructure:
+  #          requires: [build-backend]
+  #          filters:
+  #            branches:
+  #              only: [test-feature-branch]
+  #      - configure-infrastructure:
+  #          requires: [deploy-infrastructure]
+  #      - deploy-backend:
+  #          requires: [build-backend, configure-infrastructure]
+  #      - run-migrations:
+  #          requires: [deploy-backend]
+  #      - deploy-frontend:
+  #          requires: [run-migrations]
+  #      - smoke-test:
+  #          requires: [deploy-backend, deploy-frontend]
