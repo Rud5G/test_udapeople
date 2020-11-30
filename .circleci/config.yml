@@ -92,6 +92,7 @@ commands:
           environment:
             DS_STACKNAME: << parameters.stack-name >>
           command: .circleci/scripts/delete-stack.sh
+          when: on_fail
           #          command: |
           #            set -ex
           #            # check if stack exists, if false, quit.
@@ -397,10 +398,8 @@ jobs:
           value: "success"
       - delete-stack:
           stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
       - delete-stack:
           stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
       - run:
           name: Show result on success
           command: |
