@@ -303,13 +303,22 @@ aws_list_json_stack_resources() {
     echo "$stackresources"
 }
 
+aws_stack_has_s3_bucket() {
+    local stackname=$1
+    local resource_type_s3_bucket="AWS::S3::Bucket"
+    local bucketname
+
+    bucketname=$(aws_list_json_stack_resources "$stackname" "$resource_type_s3_bucket")
+    echo "$bucketname"
+}
+
 # grep -q 'hello' <<< 'hello world'
 # jq '.[] | select(.location=="Stockholm")' json
 
 aws_delete_stack() {
     local stackname=$1
     local not_deleted_stacknames
-    local resource_type_s3_bucket="AWS::S3::Bucket"
+    local bucketname
 
     not_deleted_stacknames=$(aws_list_json_not_deleted_stacks | jq -r '.StackName')
 
@@ -317,17 +326,18 @@ aws_delete_stack() {
         error_exit "$stackname is not found in list deleteable stacknames"
     fi
 
-#    aws_list_json_stack_resources "$stackname" "AWS::EC2::Instance"
+    bucketname=$(aws_stack_has_s3_bucket "$stackname" | jq -r '.PhysicalResourceId')
+    if test -n "$bucketname";
+    then
+        aws s3 rm "s3://$bucketname" --recursive
+    fi
 
-    # hiero: checken of het niet kunnen vinden een issue oplevert.
-    
-    aws_list_json_stack_resources "$stackname" "$resource_type_s3_bucket"
-
-    #    echo "test"
-
-    #    aws cloudformation list-stack-resources \
-    #        --stack-name "$stackname"
+    aws cloudformation delete-stack \
+        --stack-name "$stackname"
 }
+
+
+
 
 # Install AWS-cli v2.
 install_aws

@@ -2,6 +2,10 @@
 
 #set -x
 
+set -ue
+
+delete_stack_name="$1"
+
 # shellcheck source=./aws-common-cli.sh
 . "$(dirname "$0")/aws-common-cli.sh"
 
@@ -13,6 +17,4 @@
 
 #aws_list_json_not_deleted_stacks
 
-aws_delete_stack "udapeople-frontend-3d3f6b6"
-
-#aws_delete_stack "udapeople-backend-3d3f6b6"
+aws_delete_stack "$delete_stack_name"
