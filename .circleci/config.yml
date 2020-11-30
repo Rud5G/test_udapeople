@@ -91,7 +91,7 @@ commands:
           name: Run delete-stack script
           environment:
             DS_STACKNAME: << parameters.stack-name >>
-          command: .circleci/scripts/delete-stack.sh
+          command: .circleci/scripts/aws/delete-stack.sh
           when: on_fail
           #          command: |
           #            set -ex
