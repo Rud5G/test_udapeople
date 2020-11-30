@@ -91,7 +91,7 @@ commands:
           name: Run delete-stack script
           environment:
             DS_STACKNAME: << parameters.stack-name >>
-          command: << include(.circleci/scripts/delete-stack.sh) >>
+          command: .circleci/scripts/delete-stack.sh
           #          command: |
           #            set -ex
           #            # check if stack exists, if false, quit.
