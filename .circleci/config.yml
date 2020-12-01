@@ -139,7 +139,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}
+          key: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -163,7 +163,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}
+          key: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -181,7 +181,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}
+          key: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -207,7 +207,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}
+          key: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
@@ -233,7 +233,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-frontend-build-{{ .Branch }}
+          key: v1-frontend-build-{{ .Branch }}
       - run:
           name: Build front-end
           command: |
@@ -256,7 +256,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: v1-backend-build-{{ .Branch }}
+          key: v1-backend-build-{{ .Branch }}
       - run:
           name: Back-end build
           command: |
