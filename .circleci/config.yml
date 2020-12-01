@@ -83,9 +83,6 @@ commands:
     parameters:
       stack-name:
         type: string
-      token:
-        type: env_var_name
-        default: MEMSTASH_TOKEN
     steps:
       - run:
           name: Run delete-stack script
@@ -93,10 +90,6 @@ commands:
             DS_STACKNAME: << parameters.stack-name >>
           command: .circleci/scripts/aws/delete-stack.sh
           when: on_fail
-          #          command: |
-          #            set -ex
-          #            # check if stack exists, if false, quit.
-          #            aws cloudformation delete-stack --stack-name "<< parameters.stack-name >>"
 
   #  At the top of your config file, create a 'command' named "destroy-environment" to remove infrastructure if something goes wrong
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
@@ -108,14 +101,11 @@ commands:
       workflowid:
         type: string
     steps:
-      - run:
-          name: Destroy environments
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack --stack-name "<<parameters.workflowid>>"
+      - delete-stack:
+          stack-name: "udapeople-backend-<< parameters.workflowid >>"
+      - delete-stack:
+          stack-name: "udapeople-frontend-<< parameters.workflowid >>"
 
-    #  aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflowid>>"
-    #  aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflowid>>"
 
   #  At the top of your config file, create a “command” named revert-migrations to roll back any migrations that were successfully applied during this CI/CD workflow
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
@@ -336,9 +326,9 @@ jobs:
           command: |
             curl -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request GET https://api.memstash.io/values/backend-url
       - destroy-environment:
-          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-      - destroy-environment:
-          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+          - workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
+
+
 
   configure-infrastructure:
     <<: *dockeransible
@@ -396,10 +386,8 @@ jobs:
       - memstash-write:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
           value: "success"
-      - delete-stack:
-          stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-      - delete-stack:
-          stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          - workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Show result on success
           command: |
