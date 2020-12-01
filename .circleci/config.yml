@@ -103,6 +103,11 @@ commands:
       workflowid:
         type: string
     steps:
+      - run:
+          name: Show workflowid parameter
+          command: |
+            set -ex
+            echo "<< parameters.workflowid >>"
       - delete-stack:
           stack-name: "udapeople-backend-<< parameters.workflowid >>"
       - delete-stack:
@@ -361,9 +366,7 @@ jobs:
             echo "$EXIT_CODE"
             exit $EXIT_CODE
       - destroy-environment:
-          workflowid: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-      - destroy-environment:
-          workflowid: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     <<: *dockernodejs
