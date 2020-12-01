@@ -1,10 +1,14 @@
 #!/bin/bash
 
+set -o errexit
+
+#set -o pipefail
 #set -e
 #set -x
 
 AWS_CLI_VERSION=2
-DEBUG=true
+DEBUG=${DEBUG:-true}
+
 
 # Usage: msg <message>
 #
@@ -66,14 +70,14 @@ get_platform_env() {
     local SYS_ENV_PLATFORM
     local SYS_INFO
 
-    set +ex
-
     SYS_INFO="$(uname -o)"
 
     # PLATFORM CHECK: mac vs. alpine vs. other linux
-    if test -n "$(echo "$SYS_INFO" | grep "Darwin")"; then
+    if test -n "$(echo "$SYS_INFO" | grep "Darwin")";
+    then
         SYS_ENV_PLATFORM="darwin"
-    elif test -n "$(echo "$SYS_INFO" | grep "Linux")"; then
+    elif test -n "$(echo "$SYS_INFO" | grep "Linux")";
+    then
         SYS_ENV_PLATFORM="linux"
     else
         error_exit "This platform appears to be unsupported: $SYS_INFO"
@@ -102,16 +106,17 @@ aws_check_dependencies() {
 
 # Usage: get_sudo
 get_sudo() {
-    if test $EUID -eq 0; then
+    if test $EUID -eq 0;
+    then
         echo ""
     else
         if ! env_has_dependency "sudo"; then
             error_exit "\$EUID = $EUID, but sudo is not available. Please utilize an envionment with sudo installed."
         fi
-
-        if test "$(is_interactive)" != "0"; then
-            if ! sudo -n true 2>/dev/null; then
-                error_exit "this is a non-interactive script, and does not run as (passordless) root."
+        # check if script has sudo passwordless root
+        if ! sudo -n true 2>/dev/null; then
+            if test "$(is_interactive)" != "0"; then
+                error_exit "this is a non-interactive script, and is not started as (passordless) root."
             fi
         fi
 
@@ -123,20 +128,20 @@ get_sudo() {
 #
 #   Writes 0 to STDOUT when i - interactive is current shell options,
 is_interactive() {
-    set -x
-    # shellcheck disable=SC2005
-    echo $-
     case $- in
     *i*)
         echo "0"
         ;;
     *)
-        echo $SHLVL
-        exit
-        echo "1"
+        if test $SHLVL -le 2; then
+            echo "0"
+        else
+            echo "1"
+        fi
         ;;
     esac
 }
+
 
 # Usage: do_sleep_check <nr_of_seconds>
 do_sleep_check() {
@@ -162,8 +167,6 @@ install_aws_v2() {
     if env_has_dependency "aws"; then
         UPGRADE_ARG="--update"
     fi
-
-    set -ex
 
     TEMPDIR=$(mktemp -d) || error_exit "mktemp is not available."
 
