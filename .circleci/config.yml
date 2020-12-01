@@ -50,16 +50,27 @@ commands:
         type: env_var_name
         default: CIRCLE_WORKFLOW_ID
     steps:
+      - delete-stack:
+          stack-name: "udapeople-backend"
+      - delete-stack:
+          stack-name: "udapeople-frontend"
+
+  #  Destroy the CloudFormation stack with the stack-name (parameter), if the stack contains a S3 bucket, delete all files before.
+  delete-stack:
+    description: Delete cloudformation stack
+    parameters:
+      stack-name:
+        type: string
+      workflowid:
+        type: env_var_name
+        default: CIRCLE_WORKFLOW_ID
+    steps:
       - run:
-          name: Show workflowid parameter
+          name: Run delete-stack script
           command: |
             set -ex
-            echo "<< parameters.workflowid >>"
-      - delete-stack:
-          stack-name: "udapeople-backend-${<< parameters.workflowid >>:0:7}"
-      - delete-stack:
-          stack-name: "udapeople-frontend-${<< parameters.workflowid >>:0:7}"
-
+            .circleci/scripts/aws/delete-stack.sh ${<< parameters.stack-name >>}-${<< parameters.workflowid >>:0:7}
+          when: on_fail
 
   #  At the top of your config file, create a “command” named revert-migrations to roll back any migrations that were successfully applied during this CI/CD workflow
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
@@ -85,20 +96,6 @@ commands:
               npm install
               npm run migrations:revert
             fi
-
-  #  Destroy the CloudFormation stack with the stack-name (parameter), if the stack contains a S3 bucket, delete all files before.
-  delete-stack:
-    description: Delete cloudformation stack
-    parameters:
-      stack-name:
-        type: string
-    steps:
-      - run:
-          name: Run delete-stack script
-          environment:
-            DS_STACKNAME: << parameters.stack-name >>
-          command: .circleci/scripts/aws/delete-stack.sh
-          when: on_fail
 
   memstash-write:
     description: Write data (key + value) to memstash.io.

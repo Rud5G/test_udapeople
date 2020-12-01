@@ -204,9 +204,7 @@ install_aws() {
         fi
 
         msg "installing aws-cli version: $AWS_CLI_VERSION"
-
-        do_sleep_check 1
-
+        # do_sleep_check 1
         install_aws_v2
     else
         msg "aws-cli/v2 installed."
