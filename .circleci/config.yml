@@ -1,12 +1,5 @@
 version: 2.1
 
-dockerdefault: &dockerdefault
-  docker:
-    - image: cimg/python:3.8-node
-      auth:
-        username: $DOCKERHUB_USERNAME
-        password: $DOCKERHUB_PASSWORD
-
 dockernodejs: &dockernodejs
   docker:
     - image: cimg/node:lts
@@ -28,6 +21,14 @@ dockeraws: &dockeraws
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
 
+dockerpythonnode: &dockerpythonnode
+  docker:
+    - image: cimg/python:3.8-node
+      auth:
+        username: $DOCKERHUB_USERNAME
+        password: $DOCKERHUB_PASSWORD
+
+
 globalenvvars: &globalenvvars
   environment:
     MEMSTASH_TOKEN: 94fdaf18-8f2a-49d0-8a5f-632781e436de
@@ -36,62 +37,7 @@ orbs:
   node: circleci/node@4.1.0
   slack: circleci/slack@4.0.2
 
-  #              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
-  #              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
-
 commands:
-
-  memstash-write:
-    description: Write data (key + value) to memstash.io.
-    parameters:
-      key:
-        type: string
-      value:
-        type: string
-      token:
-        type: env_var_name
-        default: MEMSTASH_TOKEN
-    steps:
-      - run:
-          name: Send data to memstash.io
-          command: |
-            set -ex
-            curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>
-      #${CIRCLE_PROJECT_REPONAME}_${CIRCLE_BRANCH}_
-
-  memstash-read:
-    description: Read data (value) from memstash.io by key.
-    parameters:
-      key:
-        type: string
-      token:
-        type: env_var_name
-        default: MEMSTASH_TOKEN
-    steps:
-      - run:
-          name: Read data from memstash.io
-          command: |
-            set -ex
-            MEMSTASH_VALUE=$(curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request GET https://api.memstash.io/values/<< parameters.key >>)
-            MEMSTASH_KEY=<< parameters.key >>
-            echo "export $MEMSTASH_KEY=\"$MEMSTASH_VALUE\"" >> $BASH_ENV
-            source $BASH_ENV
-            echo $MEMSTASH_KEY
-
-
-  #  Destroy the CloudFormation stack with the stack-name (parameter), if the stack contains a S3 bucket, delete all files before.
-  delete-stack:
-    description: Delete cloudformation stack
-    parameters:
-      stack-name:
-        type: string
-    steps:
-      - run:
-          name: Run delete-stack script
-          environment:
-            DS_STACKNAME: << parameters.stack-name >>
-          command: .circleci/scripts/aws/delete-stack.sh
-          when: on_fail
 
   #  At the top of your config file, create a 'command' named "destroy-environment" to remove infrastructure if something goes wrong
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
@@ -117,25 +63,92 @@ commands:
 
   #  At the top of your config file, create a “command” named revert-migrations to roll back any migrations that were successfully applied during this CI/CD workflow
   #  Trigger rollback jobs if the smoke tests or any following jobs fail.
-  #  Revert the last migration (IF a new migration was applied) on the database to that it goes back to the way it was before. You can use that value you saved in MemStash.io to know if you should revert any migrations.
+  #  Revert the last migration (IF a new migration was applied) on the database to that it goes back to the way it was before.
+  #  You can use that value you saved in MemStash.io to know if you should revert any migrations.
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
+    steps:
+      # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+      - memstash-read:
+          key: "migration"
+          id: CIRCLE_WORKFLOW_ID
+          token: MEMSTASH_TOKEN
+          set_env_var: "SUCCESS"
+      - run:
+          name: Revert migrations if run before in this workflow
+          command: |
+            set -ex
+            if test "$SUCCESS" = "1";
+            then
+              echo "migrations can be reverted."
+              cd ~/project/backend
+              npm install
+              npm run migrations:revert
+            fi
+
+  #  Destroy the CloudFormation stack with the stack-name (parameter), if the stack contains a S3 bucket, delete all files before.
+  delete-stack:
+    description: Delete cloudformation stack
     parameters:
-      # Add parameter here
+      stack-name:
+        type: string
     steps:
       - run:
-          name: Revert migrations
-          # Add when this will run
+          name: Run delete-stack script
+          environment:
+            DS_STACKNAME: << parameters.stack-name >>
+          command: .circleci/scripts/aws/delete-stack.sh
+          when: on_fail
+
+  memstash-write:
+    description: Write data (key + value) to memstash.io.
+    parameters:
+      key:
+        type: string
+      value:
+        type: string
+      id:
+        type: env_var_name
+        default: CIRCLE_WORKFLOW_ID
+      token:
+        type: env_var_name
+        default: MEMSTASH_TOKEN
+    steps:
+      - run:
+          name: Send data to memstash.io
           command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$?
-            if test "$SUCCESS" == "1";
+            set -ex
+            curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request PUT --data "<< parameters.value >>" https://api.memstash.io/values/<< parameters.key >>_${<< parameters.id >>}
+
+  memstash-read:
+    description: Read data (value) from memstash.io by key and set env var.
+    parameters:
+      key:
+        type: string
+      id:
+        type: env_var_name
+        default: CIRCLE_WORKFLOW_ID
+      token:
+        type: env_var_name
+        default: MEMSTASH_TOKEN
+      set_env_var:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Read data from memstash.io
+          command: |
+            set -ex
+            MEMSTASH_VALUE=$(curl -H "Content-Type: text/plain" -H "token: << parameters.token >>" --request GET https://api.memstash.io/values/<< parameters.key >>_${<< parameters.id >>})
+            if test -n "<< parameters.set_env_var >>";
             then
-            #  cd ~/project/backend
-            #  npm install
-            #  Add revert code here. You can find this in the Getting Started section.
-              exit 1
+              MEMSTASH_KEY=<< parameters.set_env_var >>
+            else
+              MEMSTASH_KEY=<< parameters.key >>
             fi
+            echo "export $MEMSTASH_KEY=\"$MEMSTASH_VALUE\"" >> $BASH_ENV
+            source $BASH_ENV
+            echo $MEMSTASH_KEY
 
 
 jobs:
@@ -389,8 +402,9 @@ jobs:
             grep 'executed\ successfully' /tmp/output-migrations.log
           no_output_timeout: 30m
       - memstash-write:
-          key: "migration_${CIRCLE_WORKFLOW_ID}"
-          value: "success"
+          key: "migration"
+          id: CIRCLE_WORKFLOW_ID
+          value: "1"
       - destroy-environment:
           workflowid: CIRCLE_WORKFLOW_ID
       - run:
@@ -646,3 +660,7 @@ workflows:
   #          requires: [run-migrations]
   #      - smoke-test:
   #          requires: [deploy-backend, deploy-frontend]
+
+
+#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "http://$BACKEND_IP_ADDRESS:3030" https://api.memstash.io/values/backend-url
+#              curl -H "Content-Type: text/plain" -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request PUT --data "" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
