@@ -78,6 +78,8 @@ commands:
             source $BASH_ENV
             echo $MEMSTASH_KEY
 
+
+  #  Destroy the CloudFormation stack with the stack-name (parameter), if the stack contains a S3 bucket, delete all files before.
   delete-stack:
     description: Delete cloudformation stack
     parameters:
