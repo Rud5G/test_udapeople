@@ -101,7 +101,8 @@ commands:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       workflowid:
-        type: string
+        type: env_var_name
+        default: CIRCLE_WORKFLOW_ID
     steps:
       - run:
           name: Show workflowid parameter
@@ -109,9 +110,9 @@ commands:
             set -ex
             echo "<< parameters.workflowid >>"
       - delete-stack:
-          stack-name: "udapeople-backend-<< parameters.workflowid >>"
+          stack-name: "udapeople-backend-${<< parameters.workflowid >>:0:7}"
       - delete-stack:
-          stack-name: "udapeople-frontend-<< parameters.workflowid >>"
+          stack-name: "udapeople-frontend-${<< parameters.workflowid >>:0:7}"
 
 
   #  At the top of your config file, create a “command” named revert-migrations to roll back any migrations that were successfully applied during this CI/CD workflow
@@ -333,7 +334,7 @@ jobs:
           command: |
             curl -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request GET https://api.memstash.io/values/backend-url
       - destroy-environment:
-          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflowid: CIRCLE_WORKFLOW_ID
 
 
   configure-infrastructure:
@@ -366,7 +367,7 @@ jobs:
             echo "$EXIT_CODE"
             exit $EXIT_CODE
       - destroy-environment:
-          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflowid: CIRCLE_WORKFLOW_ID
 
   run-migrations:
     <<: *dockernodejs
@@ -391,7 +392,7 @@ jobs:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
           value: "success"
       - destroy-environment:
-          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflowid: CIRCLE_WORKFLOW_ID
       - run:
           name: Show result on success
           command: |
@@ -571,9 +572,19 @@ jobs:
         - run:
             name: Get old stack workflow id
             command: |
-              # your code here
-              export OldWorkflowID="the id here"
-              export STACKS=[] #put the list of stacks here
+              set -ex
+
+              # the old workflow id
+              export OldWorkflowID=$(aws cloudformation list-exports \
+                  --query "Exports[?Name==\`WorkflowID\`].Value" \
+                  --no-paginate --output text)
+
+              # list of stacks
+              export STACKS=($(aws cloudformation list-stacks \
+                  --query "StackSummaries[*].StackName" \
+                  --stack-status-filter CREATE_COMPLETE \
+                  --no-paginate --output text))
+
         - run:
             name: Remove old stacks and files
             command: |
