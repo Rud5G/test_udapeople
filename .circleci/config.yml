@@ -326,8 +326,7 @@ jobs:
           command: |
             curl -H "token: 94fdaf18-8f2a-49d0-8a5f-632781e436de" --request GET https://api.memstash.io/values/backend-url
       - destroy-environment:
-          - workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
-
+          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
 
 
   configure-infrastructure:
@@ -387,7 +386,7 @@ jobs:
           key: "migration_${CIRCLE_WORKFLOW_ID}"
           value: "success"
       - destroy-environment:
-          - workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
+          workflowid: ${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Show result on success
           command: |
